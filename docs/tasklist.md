@@ -153,4 +153,4 @@
 
 ---
 
-**Справка**: См. [@vision.md](./@vision.md) и [conventions.md](./conventions.md)
+**Справка**: См. [vision.md](./vision.md) и [conventions.md](./conventions.md)

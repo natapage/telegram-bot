@@ -57,8 +57,8 @@ telegram-bot/
 │   ├── dialog_manager.py    # Класс DialogManager - управление историей
 │   └── config.py            # Класс Config - конфигурация
 ├── docs/
-│   ├── @idea.md             # Идея проекта
-│   ├── @vision.md           # Техническое видение
+│   ├── idea.md              # Идея проекта
+│   ├── vision.md            # Техническое видение
 │   ├── conventions.md       # Правила разработки кода
 │   ├── tasklist.md          # План разработки
 │   └── workflow.md          # Процесс выполнения работ
