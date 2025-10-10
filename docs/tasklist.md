@@ -26,7 +26,9 @@
 - [ ] Добавить зависимость `aiogram==3.15.0` через `uv add`
 - [ ] Добавить зависимость `openai` через `uv add`
 - [ ] Добавить зависимость `python-dotenv` через `uv add`
-- [ ] Создать `.gitignore` с записями `.env`, `__pycache__`, `.venv/`
+- [ ] Добавить зависимость `structlog` через `uv add`
+- [ ] Создать директорию `logs/`
+- [ ] Создать `.gitignore` с записями `.env`, `__pycache__`, `.venv/`, `logs/`
 - [ ] Создать `Makefile` с командой `run` для запуска бота
 - [ ] Создать `README.md` с описанием проекта
 
@@ -40,10 +42,14 @@
 
 - [ ] Создать файл `src/config.py` с классом `Config`
 - [ ] Реализовать `Config.__init__()` с вызовом `load_dotenv()`
-- [ ] Загрузить `TELEGRAM_TOKEN` через `os.getenv()` с проверкой на None
-- [ ] Загрузить `OPENROUTER_API_KEY` через `os.getenv()` с проверкой на None
-- [ ] Загрузить `SYSTEM_PROMPT` и `MODEL_NAME` с проверкой на None
-- [ ] Загрузить `LOG_LEVEL` с дефолтным значением "INFO"
+- [ ] Загрузить `TELEGRAM_BOT_TOKEN` через `os.getenv()` с проверкой на None
+- [ ] Загрузить `OPENAI_API_KEY` через `os.getenv()` с проверкой на None
+- [ ] Загрузить `SYSTEM_PROMPT` через `os.getenv()` с проверкой на None
+- [ ] Загрузить `OPENAI_BASE_URL` с дефолтом "https://openrouter.ai/api/v1"
+- [ ] Загрузить `OPENAI_MODEL` с дефолтом "openai/gpt-4"
+- [ ] Загрузить `LOG_LEVEL` с дефолтом "INFO"
+- [ ] Загрузить `LOG_FILE_PATH` с дефолтом "logs/"
+- [ ] Загрузить `MAX_CONTEXT_MESSAGES` с дефолтом 0
 - [ ] Создать `.env.example` с примерами всех переменных
 
 **Тест**: Импортировать `Config` и вывести значения всех параметров
@@ -116,15 +122,16 @@
 
 **Цель**: Полное логгирование работы и правильная обработка ошибок
 
-- [ ] Настроить `logging.basicConfig()` в `main.py` с уровнем из Config
-- [ ] Добавить лог "Bot started" при запуске
-- [ ] Добавить лог "Message from user {user_id}: {text}" при получении сообщения
-- [ ] Добавить лог "LLM request: model={model}, messages={count}" перед запросом
-- [ ] Добавить лог "LLM response: {length} chars" после ответа
-- [ ] Обернуть вызов LLM в try/except с логом ERROR и traceback
+- [ ] Настроить `structlog` в `main.py` с уровнем из Config
+- [ ] Настроить вывод логов в консоль и файл (LOG_FILE_PATH)
+- [ ] Добавить лог `logger.info("bot_started")` при запуске
+- [ ] Добавить лог `logger.info("message_received", user_id=..., text=...)` при получении
+- [ ] Добавить лог `logger.info("llm_request", model=..., messages=...)` перед запросом
+- [ ] Добавить лог `logger.info("llm_response", length=...)` после ответа
+- [ ] Обернуть вызов LLM в try/except с `logger.error("llm_error", exc_info=True)`
 - [ ] Отправить "Произошла ошибка, попробуйте позже" при ошибке
 
-**Тест**: Запустить бота, проверить логи в консоли, ввести неверный API ключ - получить ошибку
+**Тест**: Запустить бота, проверить JSON логи в консоли и файле, ввести неверный API ключ - получить ошибку
 
 ---
 

@@ -17,6 +17,7 @@
 
 ### Вспомогательные библиотеки
 - **python-dotenv** - управление переменными окружения через .env файлы
+- **structlog** - структурированное логирование
 
 ### Хранение данных
 - **In-memory** - история диалогов хранится в памяти (словарь Python)
@@ -30,10 +31,12 @@
 - **Асинхронность** - async/await для всех I/O операций (Telegram, LLM API)
 
 ### Принципы кода
-- Явное лучше неявного
+- **Single Responsibility** - каждый класс отвечает за одну задачу
+- **Dependency Injection** - простая инъекция зависимостей через конструктор
+- **Fail Fast** - быстрое обнаружение ошибок при инициализации
+- **Explicit is better than implicit** - явность лучше неявности
 - Минимум магии и метапрограммирования
 - Простые понятные названия классов, методов и переменных
-- Type hints для параметров и возвращаемых значений
 
 ### Подход к разработке
 - Итеративно: сначала минимальный рабочий прототип, затем улучшения
@@ -59,6 +62,7 @@ telegram-bot/
 │   ├── conventions.md       # Правила разработки кода
 │   ├── tasklist.md          # План разработки
 │   └── workflow.md          # Процесс выполнения работ
+├── logs/                    # Логи приложения (в .gitignore)
 ├── .env.example             # Пример переменных окружения
 ├── .env                     # Реальные переменные (в .gitignore)
 ├── .gitignore
@@ -98,7 +102,7 @@ Config (настройки из .env)
 3. **MessageHandler** - получает сообщения от пользователей, взаимодействует с DialogManager и LLMClient, отправляет ответы
 4. **DialogManager** - хранит историю диалогов в словаре `{user_id: [messages]}`
 5. **LLMClient** - формирует запрос к LLM, отправляет через openai client к Openrouter, возвращает ответ
-6. **Config** - загружает переменные из .env (TELEGRAM_TOKEN, OPENROUTER_API_KEY, SYSTEM_PROMPT, MODEL_NAME)
+6. **Config** - загружает переменные из .env (TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, SYSTEM_PROMPT, OPENAI_MODEL)
 
 ### Поток данных
 
@@ -111,39 +115,82 @@ Config (настройки из .env)
 
 ## 5. Модель данных
 
-### История диалогов (в памяти)
+### Класс Config
 
 ```python
-dialogs: dict[int, list[dict]] = {
-    user_id: [
-        {"role": "system", "content": "Ты помощник..."},
-        {"role": "user", "content": "Привет"},
-        {"role": "assistant", "content": "Привет! Как дела?"},
-        {"role": "user", "content": "Хорошо"},
-        ...
-    ]
-}
+class Config:
+    """Конфигурация приложения из .env файла"""
+
+    # Telegram Bot
+    TELEGRAM_BOT_TOKEN: str
+
+    # Openrouter/LLM
+    OPENAI_API_KEY: str
+    OPENAI_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENAI_MODEL: str = "openai/gpt-4"
+    SYSTEM_PROMPT: str
+
+    # Логирование
+    LOG_LEVEL: str = "INFO"
+    LOG_FILE_PATH: str = "logs/"
+
+    # Контекст
+    MAX_CONTEXT_MESSAGES: int = 0  # 0 = без ограничений
+```
+
+### Класс DialogManager
+
+```python
+class DialogManager:
+    """Управление историей диалогов в памяти"""
+
+    dialogs: dict[int, list[dict]]  # {user_id: [messages]}
+
+    # Методы:
+    # - get_history(user_id: int) -> list[dict]
+    # - add_message(user_id: int, role: str, content: str) -> None
+    # - clear_history(user_id: int) -> None
 ```
 
 ### Формат сообщений (OpenAI API совместимый)
 
-- **role**: "system" | "user" | "assistant"
-- **content**: текст сообщения
+```python
+Message = dict[str, str]  # {"role": "system|user|assistant", "content": "текст"}
 
-### Конфигурация (.env файл)
+# Пример истории диалога:
+[
+    {"role": "system", "content": "Ты помощник..."},
+    {"role": "user", "content": "Привет"},
+    {"role": "assistant", "content": "Привет! Как дела?"},
+    {"role": "user", "content": "Хорошо"}
+]
+```
+
+### Переменные окружения (.env файл)
 
 ```env
-TELEGRAM_TOKEN=your_telegram_bot_token
-OPENROUTER_API_KEY=your_openrouter_api_key
-SYSTEM_PROMPT=Ты полезный ассистент
-MODEL_NAME=openai/gpt-3.5-turbo
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+
+# Openrouter/LLM
+OPENAI_API_KEY=sk-or-v1-xxxxx
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+OPENAI_MODEL=openai/gpt-4
+SYSTEM_PROMPT=Ты полезный ассистент, который помогает пользователям
+
+# Логирование
+LOG_LEVEL=INFO
+LOG_FILE_PATH=logs/
+
+# Контекст
+MAX_CONTEXT_MESSAGES=0
 ```
 
 ### Особенности
 
-- Системный промпт добавляется в начало истории для каждого пользователя при первом сообщении
-- История хранится только в памяти (при перезапуске бота теряется)
-- Без ограничений на длину истории диалога
+- Системный промпт добавляется в начало истории при первом обращении пользователя
+- История хранится в памяти (при перезапуске теряется)
+- Без ограничений на длину истории
 
 ## 6. Работа с LLM
 
@@ -159,12 +206,12 @@ MODEL_NAME=openai/gpt-3.5-turbo
 from openai import AsyncOpenAI
 
 client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=config.openrouter_api_key
+    base_url=config.OPENAI_BASE_URL,
+    api_key=config.OPENAI_API_KEY
 )
 
 response = await client.chat.completions.create(
-    model=config.model_name,
+    model=config.OPENAI_MODEL,
     messages=dialog_history
 )
 ```
@@ -224,16 +271,19 @@ response = await client.chat.completions.create(
 ### Обязательные параметры
 
 ```env
-TELEGRAM_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-OPENROUTER_API_KEY=sk-or-v1-xxxxx
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+OPENAI_API_KEY=sk-or-v1-xxxxx
 SYSTEM_PROMPT=Ты полезный ассистент, который помогает пользователям
-MODEL_NAME=openai/gpt-3.5-turbo
 ```
 
 ### Необязательные параметры (с дефолтами)
 
 ```env
-LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+OPENAI_MODEL=openai/gpt-4
+LOG_LEVEL=INFO
+LOG_FILE_PATH=logs/
+MAX_CONTEXT_MESSAGES=0
 ```
 
 ### Класс Config
@@ -252,8 +302,8 @@ LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
 
 ### Библиотека
 
-- Стандартный модуль `logging` Python
-- Без дополнительных обёрток и библиотек
+- **structlog** - структурированное логирование
+- JSON формат для логов
 
 ### Уровни логирования
 
@@ -270,18 +320,18 @@ LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
 - Ответы от LLM (длина ответа)
 - Ошибки с полным traceback
 
-### Формат логов
+### Формат логов (JSON)
 
-```
-2024-10-10 15:30:45 - INFO - Bot started
-2024-10-10 15:31:12 - INFO - Message from user 123456: "Привет"
-2024-10-10 15:31:13 - INFO - LLM request: model=gpt-3.5-turbo, messages=3
-2024-10-10 15:31:14 - INFO - LLM response: 45 chars
-2024-10-10 15:31:14 - INFO - Response sent to user 123456
+```json
+{"event": "bot_started", "timestamp": "2024-10-10T15:30:45", "level": "info"}
+{"event": "message_received", "user_id": 123456, "text": "Привет", "timestamp": "2024-10-10T15:31:12", "level": "info"}
+{"event": "llm_request", "model": "gpt-3.5-turbo", "messages": 3, "timestamp": "2024-10-10T15:31:13", "level": "info"}
+{"event": "llm_response", "length": 45, "timestamp": "2024-10-10T15:31:14", "level": "info"}
 ```
 
 ### Конфигурация
 
 - Уровень логирования из `.env` (LOG_LEVEL)
-- Вывод в консоль (stdout)
-- Без записи в файлы на начальном этапе
+- Путь к файлам логов из `.env` (LOG_FILE_PATH)
+- Вывод в консоль (stdout) и в файл
+- Ротация файлов логов
