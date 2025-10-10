@@ -55,7 +55,10 @@ telegram-bot/
 │   └── config.py            # Класс Config - конфигурация
 ├── docs/
 │   ├── @idea.md             # Идея проекта
-│   └── @vision.md           # Техническое видение
+│   ├── @vision.md           # Техническое видение
+│   ├── conventions.md       # Правила разработки кода
+│   ├── tasklist.md          # План разработки
+│   └── workflow.md          # Процесс выполнения работ
 ├── .env.example             # Пример переменных окружения
 ├── .env                     # Реальные переменные (в .gitignore)
 ├── .gitignore
