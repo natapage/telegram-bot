@@ -3,6 +3,7 @@ import asyncio
 from src.config import Config
 from src.bot import Bot
 from src.handler import MessageHandler
+from src.llm_client import LLMClient
 
 
 async def main() -> None:
@@ -13,8 +14,11 @@ async def main() -> None:
     # Инициализация бота
     bot = Bot(config)
 
+    # Инициализация LLM клиента
+    llm_client = LLMClient(config)
+
     # Инициализация обработчиков
-    handler = MessageHandler()
+    handler = MessageHandler(llm_client)
     bot.dp.include_router(handler.router)
 
     # Запуск бота
