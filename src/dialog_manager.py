@@ -1,4 +1,7 @@
 """Управление историей диалогов в памяти"""
+
+from typing import Any
+
 from src.config import Config
 
 
@@ -12,9 +15,9 @@ class DialogManager:
             config: Конфигурация приложения
         """
         self.config: Config = config
-        self.dialogs: dict[int, list[dict]] = {}
+        self.dialogs: dict[int, list[dict[str, Any]]] = {}
 
-    def get_history(self, user_id: int) -> list[dict]:
+    def get_history(self, user_id: int) -> list[dict[str, Any]]:
         """Получить историю диалога пользователя
 
         Args:
@@ -25,10 +28,16 @@ class DialogManager:
         """
         if user_id not in self.dialogs:
             # Инициализация с системным промптом
-            self.dialogs[user_id] = [
-                {"role": "system", "content": self.config.SYSTEM_PROMPT}
-            ]
-        return self.dialogs[user_id]
+            self.dialogs[user_id] = [{"role": "system", "content": self.config.SYSTEM_PROMPT}]
+
+        history = self.dialogs[user_id]
+
+        # Применить обрезку контекста если настроено
+        if self.config.MAX_CONTEXT_MESSAGES > 0:
+            history = self._trim_history(history)
+            self.dialogs[user_id] = history
+
+        return history
 
     def add_message(self, user_id: int, role: str, content: str) -> None:
         """Добавить сообщение в историю
@@ -49,3 +58,33 @@ class DialogManager:
         """
         if user_id in self.dialogs:
             del self.dialogs[user_id]
+
+    def _trim_history(self, history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Обрезать историю до MAX_CONTEXT_MESSAGES
+
+        Сохраняет системный промпт + последние N*2 сообщений (пары user+assistant)
+
+        Args:
+            history: Полная история диалога
+
+        Returns:
+            Обрезанная история
+        """
+        max_messages = self.config.MAX_CONTEXT_MESSAGES
+
+        if max_messages <= 0 or len(history) <= 1:
+            return history
+
+        # Системный промпт (первое сообщение)
+        system_prompt = [history[0]] if history and history[0]["role"] == "system" else []
+
+        # Диалоговые сообщения (без системного промпта)
+        dialog_messages = history[1:] if system_prompt else history
+
+        # Оставить последние N*2 сообщений (пары user+assistant)
+        max_dialog_messages = max_messages * 2
+
+        if len(dialog_messages) > max_dialog_messages:
+            dialog_messages = dialog_messages[-max_dialog_messages:]
+
+        return system_prompt + dialog_messages

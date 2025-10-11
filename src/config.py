@@ -1,5 +1,7 @@
 """Конфигурация приложения из .env файла"""
+
 import os
+
 from dotenv import load_dotenv
 
 
@@ -47,4 +49,3 @@ class Config:
         if value is None:
             raise ValueError(f"Обязательная переменная окружения {key} не установлена")
         return value
-

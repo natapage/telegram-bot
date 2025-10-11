@@ -1,5 +1,8 @@
 """Telegram Bot с инициализацией aiogram"""
-from aiogram import Bot as AiogramBot, Dispatcher
+
+from aiogram import Bot as AiogramBot
+from aiogram import Dispatcher
+
 from src.config import Config
 
 
@@ -19,4 +22,3 @@ class Bot:
     async def start(self) -> None:
         """Запуск polling бота"""
         await self.dp.start_polling(self.bot)
-

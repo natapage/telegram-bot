@@ -1,10 +1,12 @@
 """Обработчики сообщений Telegram"""
+
 import structlog
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from src.llm_client import LLMClient
+
 from src.dialog_manager import DialogManager
+from src.llm_client import LLMClient
 
 
 class MessageHandler:
@@ -44,6 +46,9 @@ class MessageHandler:
         Args:
             message: Входящее сообщение
         """
+        if not message.from_user:
+            return
+
         user_id = message.from_user.id
         self.dialog_manager.clear_history(user_id)
         await message.answer("История диалога очищена")
@@ -54,6 +59,13 @@ class MessageHandler:
         Args:
             message: Входящее сообщение
         """
+        # Валидация входных данных
+        if not message.text:
+            return
+
+        if not message.from_user:
+            return
+
         user_id = message.from_user.id
 
         # Логирование получения сообщения
@@ -73,7 +85,7 @@ class MessageHandler:
             await message.answer(response)
         except Exception as e:
             # Логирование ошибки
-            self.logger.error("llm_error", user_id=user_id, exc_info=True)
+            self.logger.error("llm_error", user_id=user_id, error=str(e), exc_info=True)
 
             # Отправка сообщения пользователю
             await message.answer("Произошла ошибка, попробуйте позже")
