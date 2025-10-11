@@ -18,20 +18,15 @@ class LLMClient:
             api_key=config.OPENAI_API_KEY
         )
 
-    async def generate_response(self, message: str) -> str:
+    async def generate_response(self, messages: list[dict]) -> str:
         """Генерация ответа от LLM
 
         Args:
-            message: Текст сообщения пользователя
+            messages: История сообщений в формате OpenAI API
 
         Returns:
             Ответ от LLM
         """
-        messages = [
-            {"role": "system", "content": self.config.SYSTEM_PROMPT},
-            {"role": "user", "content": message}
-        ]
-
         response = await self.client.chat.completions.create(
             model=self.config.OPENAI_MODEL,
             messages=messages

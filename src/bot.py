@@ -19,3 +19,4 @@ class Bot:
     async def start(self) -> None:
         """Запуск polling бота"""
         await self.dp.start_polling(self.bot)
+

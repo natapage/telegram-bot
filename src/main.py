@@ -4,6 +4,7 @@ from src.config import Config
 from src.bot import Bot
 from src.handler import MessageHandler
 from src.llm_client import LLMClient
+from src.dialog_manager import DialogManager
 
 
 async def main() -> None:
@@ -17,8 +18,11 @@ async def main() -> None:
     # Инициализация LLM клиента
     llm_client = LLMClient(config)
 
+    # Инициализация менеджера диалогов
+    dialog_manager = DialogManager(config)
+
     # Инициализация обработчиков
-    handler = MessageHandler(llm_client)
+    handler = MessageHandler(llm_client, dialog_manager)
     bot.dp.include_router(handler.router)
 
     # Запуск бота

@@ -47,3 +47,4 @@ class Config:
         if value is None:
             raise ValueError(f"Обязательная переменная окружения {key} не установлена")
         return value
+
