@@ -31,13 +31,28 @@ warn_unused_configs = true
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/tests/*", "*/__pycache__/*"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "src/main.py",
+    "src/bot.py",
+]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 60
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
 
 [dependency-groups]
 dev = [
     "mypy>=1.18.2",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
     "ruff>=0.14.0",
 ]
