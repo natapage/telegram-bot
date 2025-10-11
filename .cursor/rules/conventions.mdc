@@ -1,0 +1,116 @@
+---
+alwaysApply: true
+---
+## Контроль качества кода
+
+### Обязательные проверки перед коммитом
+```bash
+make format  # Автоформатирование
+make lint    # Ruff + Mypy проверки
+make test    # Запуск тестов (если есть)
+```
+
+### Настройка ruff
+- Правила: E (errors), F (pyflakes), I (isort), N (naming), UP (pyupgrade), B (bugbear), C4, SIM (simplify), TCH (type checking)
+- Игнорировать: E501 (длина строки, т.к. установлено 120)
+- Target: Python 3.11+
+
+### Настройка mypy
+- Режим: `strict = true`
+- Требование: `disallow_untyped_defs = true`
+- Все функции должны иметь type hints
+
+### Метрики качества
+- **Линтер**: 0 ошибок перед коммитом
+- **Type coverage**: 100% (все функции типизированы)
+- **Test coverage**: >= 80% для критичных компонентов
+
+---
+
+## Тестирование
+
+### Стратегия тестирования
+- **Unit-тесты**: для бизнес-логики (DialogManager, Config)
+- **Integration-тесты**: для взаимодействия компонентов (MessageHandler)
+- **Mock-тесты**: для внешних API (LLMClient с AsyncOpenAI)
+
+### Инструменты
+- **Framework**: pytest
+- **Async поддержка**: pytest-asyncio
+- **Coverage**: pytest-cov
+- **Mocking**: unittest.mock (AsyncMock для async функций)
+
+### Структура тестов
+```
+tests/
+├── __init__.py
+├── conftest.py          # Общие fixtures
+├── unit/                # Unit-тесты
+│   ├── test_config.py
+│   ├── test_dialog_manager.py
+│   └── test_llm_client.py
+└── integration/         # Integration-тесты
+    └── test_handler.py
+```
+
+### Правила написания тестов
+- Один тест проверяет одну вещь
+- Использовать fixtures для переиспользования setup кода
+- Использовать `monkeypatch` для мока переменных окружения
+- Использовать `AsyncMock` для мока async функций
+- Тесты должны быть независимыми и воспроизводимыми
+- Имена тестов: `test_<что_тестируем>_<ожидаемый_результат>`
+
+### Пример теста
+```python
+@pytest.mark.asyncio
+async def test_generate_response_returns_content(llm_client, mock_openai):
+    """Тест: generate_response возвращает корректный ответ от API"""
+    mock_openai.chat.completions.create.return_value = MockResponse("Hello")
+
+    result = await llm_client.generate_response([{"role": "user", "content": "Hi"}])
+
+    assert result == "Hello"
+```
+
+---
+
+## Лучшие практики Python
+
+### Работа с async/await
+- Не блокировать event loop синхронными операциями
+- Использовать `asyncio.gather()` для параллельных операций
+- Правильно обрабатывать `asyncio.TimeoutError` и `asyncio.CancelledError`
+
+### Работа с типами
+- Предпочитать встроенные generic types: `list[str]` вместо `List[str]`
+- Использовать `typing.Protocol` для duck typing
+- Использовать `Optional[T]` только когда значение действительно может быть None
+- Не использовать `Any` без крайней необходимости
+
+### Работа со строками
+- Использовать f-strings: `f"User {user_id}"` вместо `"User " + str(user_id)`
+- Избегать конкатенации в циклах, использовать `"".join()`
+
+### Работа с коллекциями
+- Использовать comprehensions: `[x for x in items if x > 0]`
+- Использовать `dict.get()` для безопасного доступа к ключам
+- Предпочитать `dict[key]` для обязательных ключей (Fail Fast)
+
+### Работа с ресурсами
+- Использовать context managers (`async with`) для cleanup
+- Не забывать закрывать соединения и файлы
+- Использовать `pathlib.Path` вместо `os.path`
+
+### Обработка None
+- Проверять на None явно: `if value is None:` вместо `if not value:`
+- Использовать early return для упрощения логики:
+```python
+if not message.text:
+    return
+# основная логика
+```
+
+---
+
+**Справка**: Полная архитектура, модели данных и сценарии в [vision.md](./vision.md)
