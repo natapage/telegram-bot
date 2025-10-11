@@ -109,3 +109,101 @@ def test_config_converts_max_context_messages_to_int(monkeypatch: pytest.MonkeyP
 
         assert isinstance(config.MAX_CONTEXT_MESSAGES, int)
         assert config.MAX_CONTEXT_MESSAGES == 10
+
+
+def test_config_loads_bot_role_name_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тест: загрузка BOT_ROLE_NAME из переменной окружения"""
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.setenv("SYSTEM_PROMPT", "Test prompt")
+        monkeypatch.setenv("BOT_ROLE_NAME", "Консультант по выбору музыки")
+
+        config = Config()
+
+        assert config.BOT_ROLE_NAME == "Консультант по выбору музыки"
+
+
+def test_config_loads_bot_role_description_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тест: загрузка BOT_ROLE_DESCRIPTION из переменной окружения"""
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.setenv("SYSTEM_PROMPT", "Test prompt")
+        monkeypatch.setenv("BOT_ROLE_DESCRIPTION", "Помогаю найти музыку по настроению")
+
+        config = Config()
+
+        assert config.BOT_ROLE_DESCRIPTION == "Помогаю найти музыку по настроению"
+
+
+def test_config_has_default_bot_role_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тест: дефолтные значения для BOT_ROLE_NAME и BOT_ROLE_DESCRIPTION"""
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.setenv("SYSTEM_PROMPT", "Test prompt")
+        # Не устанавливаем BOT_ROLE_* переменные
+        monkeypatch.delenv("BOT_ROLE_NAME", raising=False)
+        monkeypatch.delenv("BOT_ROLE_DESCRIPTION", raising=False)
+
+        config = Config()
+
+        assert config.BOT_ROLE_NAME == "ИИ-ассистент"
+        assert config.BOT_ROLE_DESCRIPTION == "Помогаю отвечать на вопросы"
+
+
+def test_config_loads_system_prompt_from_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
+) -> None:
+    """Тест: загрузка системного промпта из файла"""
+    # Создаем временный файл с промптом
+    prompt_file = tmp_path / "test_prompt.txt"
+    prompt_file.write_text("Test prompt from file", encoding="utf-8")
+
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.setenv("SYSTEM_PROMPT_FILE", str(prompt_file))
+        monkeypatch.delenv("SYSTEM_PROMPT", raising=False)
+
+        config = Config()
+
+        assert config.SYSTEM_PROMPT == "Test prompt from file"
+
+
+def test_config_falls_back_to_env_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тест: fallback на SYSTEM_PROMPT из env если файл не указан"""
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.setenv("SYSTEM_PROMPT", "Test prompt from env")
+        monkeypatch.delenv("SYSTEM_PROMPT_FILE", raising=False)
+
+        config = Config()
+
+        assert config.SYSTEM_PROMPT == "Test prompt from env"
+
+
+def test_config_raises_error_when_no_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тест: выброс ValueError когда нет ни файла, ни переменной окружения"""
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.delenv("SYSTEM_PROMPT", raising=False)
+        monkeypatch.delenv("SYSTEM_PROMPT_FILE", raising=False)
+
+        with pytest.raises(ValueError, match="Системный промпт не настроен"):
+            Config()
+
+
+def test_config_raises_error_when_prompt_file_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тест: выброс ValueError когда файл промпта не существует"""
+    with patch("src.config.load_dotenv"):
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test_bot_token")
+        monkeypatch.setenv("OPENAI_API_KEY", "test_api_key")
+        monkeypatch.setenv("SYSTEM_PROMPT_FILE", "non_existent_file.txt")
+        monkeypatch.delenv("SYSTEM_PROMPT", raising=False)
+
+        with pytest.raises(ValueError, match="Файл системного промпта не найден"):
+            Config()

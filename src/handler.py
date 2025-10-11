@@ -29,6 +29,7 @@ class MessageHandler:
     def _register_handlers(self) -> None:
         """Регистрация всех обработчиков"""
         self.router.message.register(self.handle_start, Command("start"))
+        self.router.message.register(self.handle_role, Command("role"))
         self.router.message.register(self.handle_clear, Command("clear"))
         self.router.message.register(self.handle_text)
 
@@ -39,6 +40,18 @@ class MessageHandler:
             message: Входящее сообщение
         """
         await message.answer("Привет! Я LLM-ассистент")
+
+    async def handle_role(self, message: Message) -> None:
+        """Обработчик команды /role
+
+        Args:
+            message: Входящее сообщение
+        """
+        role_name = self.dialog_manager.config.BOT_ROLE_NAME
+        role_description = self.dialog_manager.config.BOT_ROLE_DESCRIPTION
+
+        response = f"🤖 {role_name}\n\n{role_description}"
+        await message.answer(response)
 
     async def handle_clear(self, message: Message) -> None:
         """Обработчик команды /clear
