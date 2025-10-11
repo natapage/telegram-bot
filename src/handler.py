@@ -1,4 +1,5 @@
 """Обработчики сообщений Telegram"""
+import structlog
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
@@ -9,15 +10,17 @@ from src.dialog_manager import DialogManager
 class MessageHandler:
     """Обработчики сообщений Telegram"""
 
-    def __init__(self, llm_client: LLMClient, dialog_manager: DialogManager) -> None:
+    def __init__(self, llm_client: LLMClient, dialog_manager: DialogManager, logger: structlog.BoundLogger) -> None:
         """Инициализация роутера и регистрация обработчиков
 
         Args:
             llm_client: Клиент для работы с LLM
             dialog_manager: Менеджер истории диалогов
+            logger: Логгер приложения
         """
         self.llm_client: LLMClient = llm_client
         self.dialog_manager: DialogManager = dialog_manager
+        self.logger: structlog.BoundLogger = logger
         self.router: Router = Router()
         self._register_handlers()
 
@@ -53,14 +56,24 @@ class MessageHandler:
         """
         user_id = message.from_user.id
 
-        # Добавить сообщение пользователя в историю
-        self.dialog_manager.add_message(user_id, "user", message.text)
+        # Логирование получения сообщения
+        self.logger.info("message_received", user_id=user_id, text=message.text)
 
-        # Получить полную историю и отправить в LLM
-        history = self.dialog_manager.get_history(user_id)
-        response = await self.llm_client.generate_response(history)
+        try:
+            # Добавить сообщение пользователя в историю
+            self.dialog_manager.add_message(user_id, "user", message.text)
 
-        # Добавить ответ ассистента в историю
-        self.dialog_manager.add_message(user_id, "assistant", response)
+            # Получить полную историю и отправить в LLM
+            history = self.dialog_manager.get_history(user_id)
+            response = await self.llm_client.generate_response(history)
 
-        await message.answer(response)
+            # Добавить ответ ассистента в историю
+            self.dialog_manager.add_message(user_id, "assistant", response)
+
+            await message.answer(response)
+        except Exception as e:
+            # Логирование ошибки
+            self.logger.error("llm_error", user_id=user_id, exc_info=True)
+
+            # Отправка сообщения пользователю
+            await message.answer("Произошла ошибка, попробуйте позже")
