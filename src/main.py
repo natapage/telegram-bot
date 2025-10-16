@@ -1,12 +1,16 @@
 """Точка входа в приложение"""
+
 import asyncio
-import structlog
 from pathlib import Path
-from src.config import Config
+from typing import cast
+
+import structlog
+
 from src.bot import Bot
+from src.config import Config
+from src.dialog_manager import DialogManager
 from src.handler import MessageHandler
 from src.llm_client import LLMClient
-from src.dialog_manager import DialogManager
 
 
 def setup_logging(config: Config) -> structlog.BoundLogger:
@@ -26,14 +30,14 @@ def setup_logging(config: Config) -> structlog.BoundLogger:
         processors=[
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.add_log_level,
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(),
         ],
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
-    return structlog.get_logger()
+    return cast("structlog.BoundLogger", structlog.get_logger())
 
 
 async def main() -> None:

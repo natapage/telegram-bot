@@ -1,10 +1,12 @@
 """Обработчики сообщений Telegram"""
+
 import structlog
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from src.llm_client import LLMClient
+
 from src.dialog_manager import DialogManager
+from src.llm_client import LLMClient
 
 
 class MessageHandler:
@@ -27,6 +29,7 @@ class MessageHandler:
     def _register_handlers(self) -> None:
         """Регистрация всех обработчиков"""
         self.router.message.register(self.handle_start, Command("start"))
+        self.router.message.register(self.handle_role, Command("role"))
         self.router.message.register(self.handle_clear, Command("clear"))
         self.router.message.register(self.handle_text)
 
@@ -38,12 +41,27 @@ class MessageHandler:
         """
         await message.answer("Привет! Я LLM-ассистент")
 
+    async def handle_role(self, message: Message) -> None:
+        """Обработчик команды /role
+
+        Args:
+            message: Входящее сообщение
+        """
+        role_name = self.dialog_manager.config.BOT_ROLE_NAME
+        role_description = self.dialog_manager.config.BOT_ROLE_DESCRIPTION
+
+        response = f"🤖 {role_name}\n\n{role_description}"
+        await message.answer(response)
+
     async def handle_clear(self, message: Message) -> None:
         """Обработчик команды /clear
 
         Args:
             message: Входящее сообщение
         """
+        if not message.from_user:
+            return
+
         user_id = message.from_user.id
         self.dialog_manager.clear_history(user_id)
         await message.answer("История диалога очищена")
@@ -54,6 +72,13 @@ class MessageHandler:
         Args:
             message: Входящее сообщение
         """
+        # Валидация входных данных
+        if not message.text:
+            return
+
+        if not message.from_user:
+            return
+
         user_id = message.from_user.id
 
         # Логирование получения сообщения
@@ -73,7 +98,7 @@ class MessageHandler:
             await message.answer(response)
         except Exception as e:
             # Логирование ошибки
-            self.logger.error("llm_error", user_id=user_id, exc_info=True)
+            self.logger.error("llm_error", user_id=user_id, error=str(e), exc_info=True)
 
             # Отправка сообщения пользователю
             await message.answer("Произошла ошибка, попробуйте позже")
