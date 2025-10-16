@@ -1,7 +1,6 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
-
 # TDD Workflow выполнения работ
 
 > **Техническое видение**: [vision.md](../../docs/vision.md)

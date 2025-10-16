@@ -8,9 +8,11 @@ import structlog
 
 from src.bot import Bot
 from src.config import Config
+from src.database import Database
 from src.dialog_manager import DialogManager
 from src.handler import MessageHandler
 from src.llm_client import LLMClient
+from src.message_repository import MessageRepository
 
 
 def setup_logging(config: Config) -> structlog.BoundLogger:
@@ -54,8 +56,12 @@ async def main() -> None:
     # Инициализация LLM клиента
     llm_client = LLMClient(config, logger)
 
+    # Инициализация базы данных и репозитория
+    database = Database(config)
+    message_repository = MessageRepository(database)
+
     # Инициализация менеджера диалогов
-    dialog_manager = DialogManager(config)
+    dialog_manager = DialogManager(config, message_repository)
 
     # Инициализация обработчиков
     handler = MessageHandler(llm_client, dialog_manager, logger)

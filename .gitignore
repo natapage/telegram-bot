@@ -17,6 +17,12 @@ ENV/
 logs/
 *.log
 
+# Database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
 # IDE
 .vscode/
 .idea/

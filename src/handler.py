@@ -63,7 +63,7 @@ class MessageHandler:
             return
 
         user_id = message.from_user.id
-        self.dialog_manager.clear_history(user_id)
+        await self.dialog_manager.clear_history(user_id)
         await message.answer("История диалога очищена")
 
     async def handle_text(self, message: Message) -> None:
@@ -86,14 +86,14 @@ class MessageHandler:
 
         try:
             # Добавить сообщение пользователя в историю
-            self.dialog_manager.add_message(user_id, "user", message.text)
+            await self.dialog_manager.add_message(user_id, "user", message.text)
 
             # Получить полную историю и отправить в LLM
-            history = self.dialog_manager.get_history(user_id)
+            history = await self.dialog_manager.get_history(user_id)
             response = await self.llm_client.generate_response(history)
 
             # Добавить ответ ассистента в историю
-            self.dialog_manager.add_message(user_id, "assistant", response)
+            await self.dialog_manager.add_message(user_id, "assistant", response)
 
             await message.answer(response)
         except Exception as e:

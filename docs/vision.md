@@ -27,8 +27,10 @@
 - **pytest-cov** - покрытие кода тестами
 
 ### Хранение данных
-- **In-memory** - история диалогов хранится в памяти (словарь Python)
-- База данных не используется на начальном этапе
+- **SQLite** - персистентное хранение истории диалогов в базе данных
+- **aiosqlite** - async доступ к SQLite
+- **Alembic** - управление миграциями схемы БД
+- **Soft delete** - данные физически не удаляются, помечаются флагом `is_deleted`
 
 ## 2. Принцип разработки
 
@@ -63,9 +65,15 @@ telegram-bot/
 │   ├── handler.py           # Класс MessageHandler - обработка сообщений
 │   ├── llm_client.py        # Класс LLMClient - работа с LLM
 │   ├── dialog_manager.py    # Класс DialogManager - управление историей
+│   ├── message_repository.py # Класс MessageRepository - CRUD операции с БД
+│   ├── database.py          # Класс Database - управление подключениями
 │   ├── config.py            # Класс Config - конфигурация
 │   ├── protocols.py         # Protocol интерфейсы (опционально)
 │   └── exceptions.py        # Кастомные исключения (опционально)
+├── alembic/                 # Миграции базы данных
+│   ├── versions/            # Файлы миграций
+│   ├── env.py               # Конфигурация Alembic
+│   └── script.py.mako       # Шаблон миграций
 ├── prompts/                 # Системные промпты для разных ролей
 │   └── music_consultant.txt # Промпт консультанта по музыке
 ├── tests/                   # Тесты (добавляются по мере развития)
@@ -74,18 +82,22 @@ telegram-bot/
 │   ├── unit/                # Unit-тесты
 │   │   ├── test_config.py
 │   │   ├── test_dialog_manager.py
+│   │   ├── test_message_repository.py
 │   │   └── test_llm_client.py
 │   └── integration/         # Integration-тесты
 │       └── test_handler.py
 ├── docs/
 │   ├── idea.md              # Идея проекта
 │   ├── vision.md            # Техническое видение
-│   ├── conventions.md       # Правила разработки кода
-│   ├── tasklist.md          # План разработки
-│   ├── tasklist_tech_debt.md # План технического долга
-│   ├── workflow.md          # Процесс выполнения работ
-│   └── workflow_tech_debt.md # Процесс с контролем качества
+│   ├── roadmap.md           # Roadmap проекта по спринтам
+│   ├── tasklists/           # Планы работ по спринтам
+│   │   ├── tasklist-s0.md
+│   │   └── tasklist_tech_debt-s0.md
+│   ├── guides/              # Документация и гайды
+│   └── reviews/             # Code reviews
 ├── logs/                    # Логи приложения (в .gitignore)
+├── telegram_bot.db          # База данных SQLite (в .gitignore)
+├── alembic.ini              # Конфигурация Alembic
 ├── .env.example             # Пример переменных окружения
 ├── .env                     # Реальные переменные (в .gitignore)
 ├── .gitignore
@@ -114,7 +126,11 @@ Bot (aiogram Dispatcher + Router)
    ↓
 MessageHandler
    ↓ ↓
-   ↓ DialogManager (хранит историю)
+   ↓ DialogManager (управление историей)
+   ↓         ↓
+   ↓    MessageRepository (CRUD операции)
+   ↓         ↓
+   ↓      Database (подключения к SQLite)
    ↓
 LLMClient (общается с Openrouter)
    ↑
@@ -123,12 +139,14 @@ Config (настройки из .env)
 
 ### Компоненты и их роли
 
-1. **main.py** - создаёт Config, создаёт Bot, запускает polling
+1. **main.py** - создаёт Config, Database, MessageRepository, DialogManager, MessageHandler, запускает Bot
 2. **Bot** - инициализирует aiogram, регистрирует MessageHandler, запускает polling
 3. **MessageHandler** - получает сообщения от пользователей, валидирует входные данные, взаимодействует с DialogManager и LLMClient, отправляет ответы
-4. **DialogManager** - хранит историю диалогов в словаре `{user_id: [messages]}`, применяет обрезку контекста
-5. **LLMClient** - формирует запрос к LLM, отправляет через openai client к Openrouter, обрабатывает ошибки API, возвращает ответ
-6. **Config** - загружает переменные из .env, валидирует обязательные параметры
+4. **DialogManager** - управляет историей диалогов через MessageRepository, применяет обрезку контекста, добавляет системный промпт
+5. **MessageRepository** - выполняет CRUD операции с сообщениями в БД (создание пользователей, добавление сообщений, получение истории, soft delete)
+6. **Database** - управляет подключениями к SQLite, обеспечивает async доступ через aiosqlite
+7. **LLMClient** - формирует запрос к LLM, отправляет через openai client к Openrouter, обрабатывает ошибки API, возвращает ответ
+8. **Config** - загружает переменные из .env, валидирует обязательные параметры
 
 **Опциональные компоненты (при рефакторинге):**
 - **protocols.py** - Protocol интерфейсы для определения контрактов (LLMClientProtocol, DialogManagerProtocol)
@@ -137,11 +155,13 @@ Config (настройки из .env)
 ### Поток данных
 
 1. Пользователь → Telegram → Bot → MessageHandler
-2. MessageHandler → DialogManager (получить историю)
-3. MessageHandler → LLMClient (отправить сообщение + история)
-4. LLMClient → Openrouter → LLM → ответ
-5. MessageHandler → DialogManager (сохранить в историю)
-6. MessageHandler → Bot → Telegram → Пользователь
+2. MessageHandler → DialogManager.add_message() → MessageRepository → Database (сохранить сообщение user)
+3. MessageHandler → DialogManager.get_history() → MessageRepository → Database (загрузить историю)
+4. DialogManager добавляет системный промпт к истории
+5. MessageHandler → LLMClient (отправить сообщение + история)
+6. LLMClient → Openrouter → LLM → ответ
+7. MessageHandler → DialogManager.add_message() → MessageRepository → Database (сохранить ответ assistant)
+8. MessageHandler → Bot → Telegram → Пользователь
 
 ## 5. Модель данных
 

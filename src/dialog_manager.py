@@ -1,23 +1,25 @@
-"""Управление историей диалогов в памяти"""
+"""Управление историей диалогов с персистентным хранением"""
 
 from typing import Any
 
 from src.config import Config
+from src.message_repository import MessageRepository
 
 
 class DialogManager:
-    """Управление историей диалогов в памяти"""
+    """Управление историей диалогов с персистентным хранением"""
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, repository: MessageRepository) -> None:
         """Инициализация менеджера диалогов
 
         Args:
             config: Конфигурация приложения
+            repository: Репозиторий для работы с сообщениями
         """
         self.config: Config = config
-        self.dialogs: dict[int, list[dict[str, Any]]] = {}
+        self.repository: MessageRepository = repository
 
-    def get_history(self, user_id: int) -> list[dict[str, Any]]:
+    async def get_history(self, user_id: int) -> list[dict[str, Any]]:
         """Получить историю диалога пользователя
 
         Args:
@@ -26,20 +28,22 @@ class DialogManager:
         Returns:
             Список сообщений в формате OpenAI API
         """
-        if user_id not in self.dialogs:
-            # Инициализация с системным промптом
-            self.dialogs[user_id] = [{"role": "system", "content": self.config.SYSTEM_PROMPT}]
+        # Загрузить сообщения из базы данных
+        messages = await self.repository.get_user_messages(user_id)
 
-        history = self.dialogs[user_id]
+        # Преобразовать формат БД в формат OpenAI API
+        history = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
+
+        # Добавить системный промпт в начало (не хранится в БД)
+        history = [{"role": "system", "content": self.config.SYSTEM_PROMPT}] + history
 
         # Применить обрезку контекста если настроено
         if self.config.MAX_CONTEXT_MESSAGES > 0:
             history = self._trim_history(history)
-            self.dialogs[user_id] = history
 
         return history
 
-    def add_message(self, user_id: int, role: str, content: str) -> None:
+    async def add_message(self, user_id: int, role: str, content: str) -> None:
         """Добавить сообщение в историю
 
         Args:
@@ -47,17 +51,15 @@ class DialogManager:
             role: Роль отправителя (user/assistant)
             content: Текст сообщения
         """
-        history = self.get_history(user_id)
-        history.append({"role": role, "content": content})
+        await self.repository.add_message(user_id, role, content)
 
-    def clear_history(self, user_id: int) -> None:
-        """Очистить историю диалога пользователя
+    async def clear_history(self, user_id: int) -> None:
+        """Очистить историю диалога пользователя (мягкое удаление)
 
         Args:
             user_id: ID пользователя
         """
-        if user_id in self.dialogs:
-            del self.dialogs[user_id]
+        await self.repository.soft_delete_user_messages(user_id)
 
     def _trim_history(self, history: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Обрезать историю до MAX_CONTEXT_MESSAGES

@@ -37,6 +37,9 @@ class Config:
         max_context = os.getenv("MAX_CONTEXT_MESSAGES", "0")
         self.MAX_CONTEXT_MESSAGES: int = int(max_context)
 
+        # База данных
+        self.DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./telegram_bot.db")
+
     def _get_required(self, key: str) -> str:
         """Получить обязательный параметр из окружения
 

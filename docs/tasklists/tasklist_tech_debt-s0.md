@@ -186,6 +186,6 @@
 ---
 
 **Справка**:
-- Соглашения: [conventions.md](./conventions.md)
-- Архитектура: [vision.md](./vision.md)
-- Основной plan: [tasklist.md](./tasklist.md)
+- Roadmap: [roadmap.md](../roadmap.md)
+- Архитектура: [vision.md](../vision.md)
+- Основной plan: [tasklist-s0.md](./tasklist-s0.md)
