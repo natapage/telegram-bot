@@ -1,146 +1,142 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import { useStats } from '@/hooks/useStats';
+import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
+import { OverallStats } from '@/components/dashboard/OverallStats';
+import { ActivityChart } from '@/components/dashboard/ActivityChart';
+import { RecentDialogs } from '@/components/dashboard/RecentDialogs';
+import { TopUsers } from '@/components/dashboard/TopUsers';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AlertCircle, Loader2, Github } from 'lucide-react';
+import { GITHUB_REPO_URL } from '@/config/api.config';
 
-export default function Dashboard() {
+/**
+ * Loading State компонент
+ */
+function LoadingState() {
   return (
-    <div className="bg-background min-h-screen p-8">
-      {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold">Telegram Bot Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Статистика и аналитика диалогов с пользователями
-        </p>
-      </header>
-
-      {/* Period Selector Placeholder */}
-      <div className="mb-6">
-        <div className="flex gap-2">
-          <Button variant="default">День</Button>
-          <Button variant="outline">Неделя</Button>
-          <Button variant="outline">Месяц</Button>
-        </div>
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardContent className="bg-muted h-24 animate-pulse p-6" />
+          </Card>
+        ))}
       </div>
-
-      {/* Dashboard Grid */}
-      <div className="grid gap-6">
-        {/* Overall Stats Section */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Всего диалогов</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">52</div>
-              <p className="text-muted-foreground text-xs">за последние 24 часа</p>
-            </CardContent>
+      <Card>
+        <CardContent className="flex h-[400px] items-center justify-center">
+          <Loader2 className="text-muted-foreground h-12 w-12 animate-spin" />
+        </CardContent>
+      </Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        {[1, 2].map((i) => (
+          <Card key={i}>
+            <CardContent className="bg-muted h-[300px] animate-pulse p-6" />
           </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Активных пользователей</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">41</div>
-              <p className="text-muted-foreground text-xs">уникальных пользователей</p>
-            </CardContent>
-          </Card>
+/**
+ * Error State компонент
+ */
+function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <Card className="p-8 text-center">
+      <AlertCircle className="text-destructive mx-auto h-12 w-12" />
+      <h3 className="mt-4 text-lg font-semibold">Ошибка загрузки данных</h3>
+      <p className="text-muted-foreground mt-2">{error}</p>
+      <Button onClick={onRetry} className="mt-4">
+        Повторить попытку
+      </Button>
+    </Card>
+  );
+}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Средняя длина диалога</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">11.5</div>
-              <p className="text-muted-foreground text-xs">сообщений на диалог</p>
-            </CardContent>
-          </Card>
-        </div>
+/**
+ * Empty State компонент
+ */
+function EmptyState() {
+  return (
+    <Card className="p-8 text-center">
+      <h3 className="text-lg font-semibold">Нет данных</h3>
+      <p className="text-muted-foreground mt-2">
+        Статистика пока недоступна. Начните использовать бота, чтобы увидеть данные здесь.
+      </p>
+    </Card>
+  );
+}
 
-        {/* Activity Chart Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>График активности</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex h-[300px] items-center justify-center rounded-lg border-2 border-dashed">
-              <p className="text-muted-foreground">Activity Chart будет здесь (Спринт F3)</p>
+/**
+ * Dashboard - главная страница с визуализацией статистики
+ */
+export default function Dashboard() {
+  const { data, loading, error, period, setPeriod, retry } = useStats('day');
+
+  return (
+    <div className="bg-background min-h-screen p-4 md:p-8">
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <header className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold">Telegram Bot Dashboard</h1>
+            <p className="text-muted-foreground mt-2">
+              Статистика и аналитика диалогов с пользователями
+            </p>
+          </div>
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-opacity hover:opacity-80"
+          >
+            <Button variant="outline" className="gap-2">
+              <Github className="h-5 w-5" />
+              <span>GitHub</span>
+            </Button>
+          </a>
+        </header>
+
+        {/* Period Selector */}
+        <PeriodSelector period={period} onPeriodChange={setPeriod} />
+
+        {/* Loading State */}
+        {loading && <LoadingState />}
+
+        {/* Error State */}
+        {error && !loading && <ErrorState error={error} onRetry={retry} />}
+
+        {/* Empty State */}
+        {!loading && !error && data && data.overall.total_dialogs === 0 && <EmptyState />}
+
+        {/* Data Display */}
+        {!loading && !error && data && data.overall.total_dialogs > 0 && (
+          <>
+            {/* Overall Stats */}
+            <OverallStats stats={data.overall} />
+
+            {/* Activity Chart */}
+            <ActivityChart data={data.activity_data} period={period} />
+
+            {/* Recent Dialogs and Top Users */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <RecentDialogs dialogs={data.recent_dialogs} />
+              <TopUsers users={data.top_users} />
             </div>
-          </CardContent>
-        </Card>
+          </>
+        )}
 
-        {/* Recent Dialogs and Top Users */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Recent Dialogs */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Последние диалоги</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border-b pb-3">
-                  <p className="font-medium">User #123456789</p>
-                  <p className="text-muted-foreground text-sm">Спасибо за помощь!</p>
-                  <p className="text-muted-foreground mt-1 text-xs">15 сообщений</p>
-                </div>
-                <div className="border-b pb-3">
-                  <p className="font-medium">User #987654321</p>
-                  <p className="text-muted-foreground text-sm">Как настроить параметры?</p>
-                  <p className="text-muted-foreground mt-1 text-xs">8 сообщений</p>
-                </div>
-                <p className="text-muted-foreground pt-2 text-center text-sm">
-                  Полный список в Спринте F3
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Top Users */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Топ пользователей</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <p className="font-medium">User #111222333</p>
-                    <p className="text-muted-foreground text-xs">
-                      Последняя активность: 2 часа назад
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">95</p>
-                    <p className="text-muted-foreground text-xs">сообщений</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <p className="font-medium">User #444555666</p>
-                    <p className="text-muted-foreground text-xs">
-                      Последняя активность: 5 часов назад
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">78</p>
-                    <p className="text-muted-foreground text-xs">сообщений</p>
-                  </div>
-                </div>
-                <p className="text-muted-foreground pt-2 text-center text-sm">
-                  Полный топ в Спринте F3
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Footer */}
+        <footer className="text-muted-foreground mt-12 text-center text-sm">
+          <p>Sprint F3 - Dashboard реализован ✅</p>
+          <p className="mt-2">
+            Backend API: <code className="bg-muted rounded px-2 py-1">http://localhost:8000</code>
+          </p>
+        </footer>
       </div>
-
-      {/* Footer */}
-      <footer className="text-muted-foreground mt-12 text-center text-sm">
-        <p>Sprint F2 - Frontend инициализация завершена ✅</p>
-        <p className="mt-2">
-          Backend API: <code className="bg-muted rounded px-2 py-1">http://localhost:8000</code>
-        </p>
-      </footer>
     </div>
   );
 }

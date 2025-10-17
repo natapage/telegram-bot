@@ -35,3 +35,10 @@ export const API_RETRY_CONFIG = {
   /** Задержка между попытками (в миллисекундах) */
   retryDelay: 1000,
 } as const;
+
+/**
+ * GitHub repository URL
+ * Берется из переменной окружения NEXT_PUBLIC_GITHUB_REPO_URL
+ */
+export const GITHUB_REPO_URL =
+  process.env.NEXT_PUBLIC_GITHUB_REPO_URL || 'https://github.com/yourusername/telegram-bot';

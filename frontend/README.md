@@ -15,7 +15,7 @@
 
 ## 🎯 Статус проекта
 
-**Текущий этап**: ✅ Спринт F2 - Инициализация Frontend проекта завершен
+**Текущий этап**: ✅ Спринт F3 - Dashboard UI реализован
 
 См. [Frontend Roadmap](../doc/frontend-roadmap.md) для полного плана развития.
 
@@ -64,6 +64,9 @@ make frontend-install
 ```bash
 # Backend API URL
 NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# GitHub Repository URL (замените на URL вашего репозитория)
+NEXT_PUBLIC_GITHUB_REPO_URL=https://github.com/yourusername/telegram-bot
 ```
 
 ### 3. Запуск dev-сервера
@@ -103,21 +106,30 @@ frontend/
 │   │   └── globals.css        # Global styles
 │   ├── components/            # React компоненты
 │   │   ├── ui/               # shadcn/ui компоненты
-│   │   ├── dashboard/        # Dashboard компоненты (F3)
+│   │   ├── dashboard/        # Dashboard компоненты ✨
+│   │   │   ├── PeriodSelector.tsx     # Выбор периода
+│   │   │   ├── OverallStats.tsx       # Карточки метрик
+│   │   │   ├── ActivityChart.tsx      # График активности
+│   │   │   ├── RecentDialogs.tsx      # Последние диалоги
+│   │   │   └── TopUsers.tsx           # Топ пользователей
 │   │   └── layout/           # Layout компоненты
 │   ├── lib/                   # Утилиты и хелперы
 │   │   ├── utils.ts          # shadcn utils
 │   │   ├── api.ts            # API client
-│   │   └── types.ts          # TypeScript типы
+│   │   ├── types.ts          # TypeScript типы
+│   │   └── format.ts         # Форматирование дат/чисел ✨
 │   ├── hooks/                # Custom React hooks
+│   │   └── useStats.ts       # Hook для загрузки статистики ✨
 │   ├── config/               # Конфигурация
 │   │   └── api.config.ts     # API endpoints
-│   └── __tests__/            # Тесты
+│   └── __tests__/            # Тесты ✨
 │       └── setup.ts          # Vitest setup
 ├── doc/                       # Документация
 │   ├── front-vision.md       # Техническое видение
 │   ├── adr-tech-stack.md     # ADR для стека
 │   └── plans/                # Планы спринтов
+│       ├── s2-init-plan.md   # Sprint F2
+│       └── s3-dashboard-plan.md  # Sprint F3 ✨
 ├── public/                    # Статические файлы
 ├── .env.local                 # Environment variables (не в git)
 ├── .env.example               # Пример переменных
@@ -125,6 +137,103 @@ frontend/
 ├── tsconfig.json              # TypeScript конфигурация
 ├── vitest.config.ts           # Vitest конфигурация
 └── README.md                  # Этот файл
+```
+
+✨ - Добавлено в Sprint F3
+
+---
+
+## 🎨 Dashboard Компоненты
+
+### PeriodSelector
+
+Переключатель между периодами статистики (День/Неделя/Месяц).
+
+**Props:**
+
+```typescript
+interface PeriodSelectorProps {
+  period: Period;
+  onPeriodChange: (period: Period) => void;
+}
+```
+
+**Использование:**
+
+```tsx
+<PeriodSelector period={period} onPeriodChange={setPeriod} />
+```
+
+### OverallStats
+
+Отображает 3 карточки с ключевыми метриками: всего диалогов, активных пользователей, средняя длина диалога.
+
+**Props:**
+
+```typescript
+interface OverallStatsProps {
+  stats: OverallStats;
+}
+```
+
+### ActivityChart
+
+График активности пользователей во времени (Recharts). Автоматически адаптирует ось X в зависимости от периода.
+
+**Props:**
+
+```typescript
+interface ActivityChartProps {
+  data: ActivityDataPoint[];
+  period: Period;
+}
+```
+
+### RecentDialogs
+
+Таблица последних 10 диалогов с информацией о пользователях и сообщениях. Responsive design с адаптацией для mobile.
+
+**Props:**
+
+```typescript
+interface RecentDialogsProps {
+  dialogs: RecentDialog[];
+}
+```
+
+### TopUsers
+
+Список топ 5 самых активных пользователей с бейджами позиций.
+
+**Props:**
+
+```typescript
+interface TopUsersProps {
+  users: TopUser[];
+}
+```
+
+### useStats Hook
+
+Custom hook для загрузки статистики из API с управлением loading/error states.
+
+**Возвращаемые значения:**
+
+```typescript
+interface UseStatsReturn {
+  data: StatsResponse | null;
+  loading: boolean;
+  error: string | null;
+  period: Period;
+  setPeriod: (period: Period) => void;
+  retry: () => void;
+}
+```
+
+**Использование:**
+
+```tsx
+const { data, loading, error, period, setPeriod, retry } = useStats('day');
 ```
 
 ---
@@ -205,9 +314,16 @@ pnpm test
 ### Структура тестов
 
 ```
-src/__tests__/
-├── setup.ts          # Глобальные настройки
-└── components/       # Тесты компонентов (добавятся в F3)
+src/
+├── __tests__/
+│   └── setup.ts                         # Глобальные настройки
+├── hooks/__tests__/
+│   └── useStats.test.ts                 # Тесты для useStats hook
+└── components/dashboard/__tests__/
+    ├── PeriodSelector.test.tsx          # Тесты для PeriodSelector
+    ├── OverallStats.test.tsx            # Тесты для OverallStats
+    ├── RecentDialogs.test.tsx           # Тесты для RecentDialogs
+    └── TopUsers.test.tsx                # Тесты для TopUsers
 ```
 
 ### Coverage цели
@@ -293,7 +409,7 @@ export const Component: FC<ComponentProps> = ({ title, onAction }) => {
 | ------ | -------------------------------- | ---------------- |
 | **F1** | Требования к дашборду и Mock API | ✅ Завершено     |
 | **F2** | Инициализация Frontend проекта   | ✅ Завершено     |
-| **F3** | Реализация Dashboard UI          | 🔵 Запланировано |
+| **F3** | Реализация Dashboard UI          | ✅ Завершено     |
 | **F4** | Реализация ИИ-чата               | 🔵 Запланировано |
 | **F5** | Переход с Mock на Real API       | 🔵 Запланировано |
 
@@ -350,9 +466,9 @@ pnpm format
 
 ---
 
-**Версия**: 0.2.0
+**Версия**: 0.3.0
 **Дата обновления**: 2025-10-17
-**Статус**: Sprint F2 завершен ✅
+**Статус**: Sprint F3 завершен ✅
 
 ---
 
