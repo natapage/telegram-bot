@@ -43,7 +43,7 @@ export default function AIChatCard({ className, onClose }: AIChatCardProps) {
     };
 
     return (
-        <div className={cn('relative h-[700px] w-[500px] overflow-hidden rounded-2xl p-[2px]', className)}>
+        <div className={cn('relative h-[700px] w-[500px] rounded-2xl p-[2px]', className)}>
             {/* Animated Outer Border */}
             <motion.div
                 className="absolute inset-0 rounded-2xl border-2 border-purple-300/50"
@@ -52,7 +52,7 @@ export default function AIChatCard({ className, onClose }: AIChatCardProps) {
             />
 
             {/* Inner Card */}
-            <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-purple-200 bg-white backdrop-blur-xl">
+            <div className="relative flex h-full w-full flex-col rounded-xl border border-purple-200 bg-white backdrop-blur-xl">
                 {/* Inner Animated Background */}
                 <motion.div
                     className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-blue-50"

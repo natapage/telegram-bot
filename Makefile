@@ -61,3 +61,25 @@ frontend-lint:
 
 frontend-test:
 	cd frontend && pnpm test
+
+# Docker commands
+.PHONY: docker-up docker-down docker-build docker-logs docker-status docker-clean
+
+docker-up:
+	docker-compose up -d
+
+docker-down:
+	docker-compose down
+
+docker-build:
+	docker-compose build
+
+docker-logs:
+	docker-compose logs -f
+
+docker-status:
+	docker-compose ps
+
+docker-clean:
+	docker-compose down -v
+	docker system prune -f

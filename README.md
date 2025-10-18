@@ -36,8 +36,58 @@ uv run alembic upgrade head
 
 ## Запуск
 
+### Локальный запуск (без Docker)
+
 ```bash
 make run
+```
+
+### Запуск через Docker
+
+#### Быстрый старт
+
+1. Создать `.env` файл на основе `.env.example`:
+```bash
+cp .env.example .env
+```
+
+2. Заполнить переменные окружения в `.env`:
+   - `TELEGRAM_BOT_TOKEN` - токен от @BotFather
+   - `OPENAI_API_KEY` - ключ API от Openrouter
+
+3. Запустить все сервисы:
+```bash
+docker-compose up
+```
+
+Или с помощью make:
+```bash
+make docker-up
+```
+
+#### Docker команды
+
+```bash
+make docker-up       # Запустить все сервисы в фоне
+make docker-down     # Остановить все сервисы
+make docker-build    # Пересобрать образы
+make docker-logs     # Просмотр логов (следить в реальном времени)
+make docker-status   # Статус сервисов
+make docker-clean    # Остановить и удалить volumes + очистка
+```
+
+#### Доступ к сервисам
+
+- **Frontend**: http://localhost:3001 (или 3000, если порт свободен)
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+#### Применение миграций
+
+После первого запуска нужно применить миграции:
+
+```bash
+docker-compose exec api uv run alembic upgrade head
 ```
 
 ## Команды бота

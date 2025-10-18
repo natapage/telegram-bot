@@ -1,0 +1,28 @@
+# Dockerfile для FastAPI API сервера
+FROM python:3.11-slim
+
+# Установка UV менеджера пакетов
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Рабочая директория
+WORKDIR /app
+
+# Копирование файлов зависимостей
+COPY pyproject.toml uv.lock ./
+
+# Установка зависимостей
+RUN uv sync --frozen --no-dev
+
+# Копирование исходного кода
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
+
+# Создание директории для логов
+RUN mkdir -p logs
+
+# Expose порта для API
+EXPOSE 8000
+
+# Запуск API сервера
+CMD ["uv", "run", "python", "-m", "src.api_main"]
