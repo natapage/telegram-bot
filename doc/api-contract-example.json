@@ -1,0 +1,195 @@
+{
+    "overall": {
+        "total_dialogs": 145,
+        "active_users": 89,
+        "avg_dialog_length": 12.3
+    },
+    "activity_data": [
+        {
+            "timestamp": "2025-10-17T00:00:00Z",
+            "message_count": 45
+        },
+        {
+            "timestamp": "2025-10-17T01:00:00Z",
+            "message_count": 23
+        },
+        {
+            "timestamp": "2025-10-17T02:00:00Z",
+            "message_count": 12
+        },
+        {
+            "timestamp": "2025-10-17T03:00:00Z",
+            "message_count": 8
+        },
+        {
+            "timestamp": "2025-10-17T04:00:00Z",
+            "message_count": 15
+        },
+        {
+            "timestamp": "2025-10-17T05:00:00Z",
+            "message_count": 28
+        },
+        {
+            "timestamp": "2025-10-17T06:00:00Z",
+            "message_count": 42
+        },
+        {
+            "timestamp": "2025-10-17T07:00:00Z",
+            "message_count": 67
+        },
+        {
+            "timestamp": "2025-10-17T08:00:00Z",
+            "message_count": 89
+        },
+        {
+            "timestamp": "2025-10-17T09:00:00Z",
+            "message_count": 112
+        },
+        {
+            "timestamp": "2025-10-17T10:00:00Z",
+            "message_count": 134
+        },
+        {
+            "timestamp": "2025-10-17T11:00:00Z",
+            "message_count": 156
+        },
+        {
+            "timestamp": "2025-10-17T12:00:00Z",
+            "message_count": 145
+        },
+        {
+            "timestamp": "2025-10-17T13:00:00Z",
+            "message_count": 128
+        },
+        {
+            "timestamp": "2025-10-17T14:00:00Z",
+            "message_count": 142
+        },
+        {
+            "timestamp": "2025-10-17T15:00:00Z",
+            "message_count": 158
+        },
+        {
+            "timestamp": "2025-10-17T16:00:00Z",
+            "message_count": 167
+        },
+        {
+            "timestamp": "2025-10-17T17:00:00Z",
+            "message_count": 189
+        },
+        {
+            "timestamp": "2025-10-17T18:00:00Z",
+            "message_count": 201
+        },
+        {
+            "timestamp": "2025-10-17T19:00:00Z",
+            "message_count": 178
+        },
+        {
+            "timestamp": "2025-10-17T20:00:00Z",
+            "message_count": 156
+        },
+        {
+            "timestamp": "2025-10-17T21:00:00Z",
+            "message_count": 123
+        },
+        {
+            "timestamp": "2025-10-17T22:00:00Z",
+            "message_count": 89
+        },
+        {
+            "timestamp": "2025-10-17T23:00:00Z",
+            "message_count": 67
+        }
+    ],
+    "recent_dialogs": [
+        {
+            "user_id": 123456789,
+            "last_message": "Спасибо за помощь! Очень полезная информация о выборе музыки для вечеринки.",
+            "created_at": "2025-10-17T18:45:23Z",
+            "message_count": 15
+        },
+        {
+            "user_id": 987654321,
+            "last_message": "Можешь посоветовать что-то для расслабления после работы?",
+            "created_at": "2025-10-17T17:32:10Z",
+            "message_count": 8
+        },
+        {
+            "user_id": 555777999,
+            "last_message": "Отличные рекомендации! Добавил все треки в плейлист.",
+            "created_at": "2025-10-17T16:20:45Z",
+            "message_count": 12
+        },
+        {
+            "user_id": 111222333,
+            "last_message": "Привет! Мне нужна музыка для утренней пробежки, что посоветуешь?",
+            "created_at": "2025-10-17T15:10:30Z",
+            "message_count": 10
+        },
+        {
+            "user_id": 444555666,
+            "last_message": "Ищу джазовые композиции для романтического ужина. Есть идеи?",
+            "created_at": "2025-10-17T14:05:18Z",
+            "message_count": 18
+        },
+        {
+            "user_id": 777888999,
+            "last_message": "Нужны треки для концентрации во время учебы, желательно без слов.",
+            "created_at": "2025-10-17T13:42:55Z",
+            "message_count": 7
+        },
+        {
+            "user_id": 222333444,
+            "last_message": "Классная подборка! Можешь еще что-то похожее порекомендовать?",
+            "created_at": "2025-10-17T12:28:40Z",
+            "message_count": 14
+        },
+        {
+            "user_id": 666777888,
+            "last_message": "Ищу энергичную музыку для тренировки в зале.",
+            "created_at": "2025-10-17T11:15:22Z",
+            "message_count": 9
+        },
+        {
+            "user_id": 333444555,
+            "last_message": "Спасибо! Твои рекомендации всегда в точку!",
+            "created_at": "2025-10-17T10:50:12Z",
+            "message_count": 20
+        },
+        {
+            "user_id": 888999000,
+            "last_message": "Мне нужна спокойная музыка для медитации и йоги.",
+            "created_at": "2025-10-17T09:35:08Z",
+            "message_count": 11
+        }
+    ],
+    "top_users": [
+        {
+            "user_id": 333444555,
+            "message_count": 20,
+            "last_active": "2025-10-17T10:50:12Z"
+        },
+        {
+            "user_id": 444555666,
+            "message_count": 18,
+            "last_active": "2025-10-17T14:05:18Z"
+        },
+        {
+            "user_id": 123456789,
+            "message_count": 15,
+            "last_active": "2025-10-17T18:45:23Z"
+        },
+        {
+            "user_id": 222333444,
+            "message_count": 14,
+            "last_active": "2025-10-17T12:28:40Z"
+        },
+        {
+            "user_id": 555777999,
+            "message_count": 12,
+            "last_active": "2025-10-17T16:20:45Z"
+        }
+    ],
+    "period": "day"
+}
