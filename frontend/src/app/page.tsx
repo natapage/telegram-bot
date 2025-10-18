@@ -6,6 +6,7 @@ import { OverallStats } from '@/components/dashboard/OverallStats';
 import { ActivityChart } from '@/components/dashboard/ActivityChart';
 import { RecentDialogs } from '@/components/dashboard/RecentDialogs';
 import { TopUsers } from '@/components/dashboard/TopUsers';
+import { FloatingChatButton } from '@/components/dashboard/FloatingChatButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, Github } from 'lucide-react';
@@ -137,6 +138,9 @@ export default function Dashboard() {
           </p>
         </footer>
       </div>
+
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
     </div>
   );
 }

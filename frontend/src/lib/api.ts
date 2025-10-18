@@ -5,7 +5,15 @@
  */
 
 import { API_BASE_URL, API_ENDPOINTS, API_TIMEOUT } from '@/config/api.config';
-import type { StatsResponse, HealthResponse, Period, ApiError } from './types';
+import type {
+  StatsResponse,
+  HealthResponse,
+  Period,
+  ApiError,
+  ChatRequest,
+  ChatResponse,
+  SessionResponse,
+} from './types';
 
 /**
  * Базовая функция для выполнения fetch запросов с обработкой ошибок
@@ -92,6 +100,66 @@ export const apiClient = {
     const url = `${API_BASE_URL}${API_ENDPOINTS.stats}?period=${period}`;
     const response = await fetchWithTimeout(url);
     return handleResponse<StatsResponse>(response);
+  },
+
+  /**
+   * Отправка сообщения в чат
+   * @param request - запрос с сообщением, режимом и session_id
+   * @returns Promise с ответом от чата
+   * @example
+   * ```ts
+   * const response = await apiClient.sendChatMessage({
+   *   message: 'Привет!',
+   *   mode: 'normal',
+   *   session_id: 'web_123'
+   * });
+   * ```
+   */
+  async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
+    const url = `${API_BASE_URL}/api/chat/message`;
+    const response = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+    return handleResponse<ChatResponse>(response);
+  },
+
+  /**
+   * Очистка истории чата
+   * @param sessionId - ID сессии для очистки
+   * @returns Promise<void>
+   * @example
+   * ```ts
+   * await apiClient.clearChat('web_123');
+   * ```
+   */
+  async clearChat(sessionId: string): Promise<void> {
+    const url = `${API_BASE_URL}/api/chat/clear`;
+    const response = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+    await handleResponse<void>(response);
+  },
+
+  /**
+   * Получение или создание session ID для веб-пользователя
+   * @returns Promise с session_id
+   * @example
+   * ```ts
+   * const { session_id } = await apiClient.getOrCreateSession();
+   * ```
+   */
+  async getOrCreateSession(): Promise<SessionResponse> {
+    const url = `${API_BASE_URL}/api/chat/session`;
+    const response = await fetchWithTimeout(url);
+    return handleResponse<SessionResponse>(response);
   },
 };
 

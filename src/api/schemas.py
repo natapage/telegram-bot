@@ -1,4 +1,4 @@
-"""Схемы данных для API дашборда статистики"""
+"""Схемы данных для API дашборда статистики и чата"""
 
 from dataclasses import dataclass
 
@@ -80,3 +80,58 @@ class StatsResponse:
     recent_dialogs: list[DialogPreview]
     top_users: list[UserActivity]
     period: str  # "day" | "week" | "month"
+
+
+# ==================== Chat API Schemas ====================
+
+
+@dataclass
+class ChatRequest:
+    """Запрос на отправку сообщения в чат
+
+    Attributes:
+        message: Текст сообщения пользователя
+        mode: Режим работы чата ("normal" | "admin")
+        session_id: ID сессии веб-пользователя
+    """
+
+    message: str
+    mode: str
+    session_id: str
+
+
+@dataclass
+class ChatResponse:
+    """Ответ от API чата
+
+    Attributes:
+        message: Ответное сообщение от AI
+        sql_query: SQL запрос (только для admin режима)
+        session_id: ID сессии
+    """
+
+    message: str
+    sql_query: str | None
+    session_id: str
+
+
+@dataclass
+class SessionResponse:
+    """Ответ от endpoint создания сессии
+
+    Attributes:
+        session_id: Уникальный ID сессии
+    """
+
+    session_id: str
+
+
+@dataclass
+class ClearChatRequest:
+    """Запрос на очистку истории чата
+
+    Attributes:
+        session_id: ID сессии для очистки
+    """
+
+    session_id: str

@@ -91,3 +91,56 @@ export interface ApiError {
   /** HTTP статус код */
   status?: number;
 }
+
+// ==================== Chat API Types ====================
+
+/**
+ * Режим работы чата
+ */
+export type ChatMode = 'normal' | 'admin';
+
+/**
+ * Сообщение в чате
+ */
+export interface ChatMessage {
+  /** Роль отправителя */
+  role: 'user' | 'assistant' | 'system';
+  /** Содержимое сообщения */
+  content: string;
+  /** SQL запрос (только для admin режима) */
+  sql_query?: string;
+  /** Временная метка сообщения */
+  timestamp?: string;
+}
+
+/**
+ * Запрос на отправку сообщения в чат
+ */
+export interface ChatRequest {
+  /** Текст сообщения пользователя */
+  message: string;
+  /** Режим работы чата */
+  mode: ChatMode;
+  /** ID сессии веб-пользователя */
+  session_id: string;
+}
+
+/**
+ * Ответ от API чата
+ */
+export interface ChatResponse {
+  /** Ответное сообщение от AI */
+  message: string;
+  /** SQL запрос (только для admin режима) */
+  sql_query?: string;
+  /** ID сессии */
+  session_id: string;
+}
+
+/**
+ * Ответ от endpoint создания сессии
+ */
+export interface SessionResponse {
+  /** Уникальный ID сессии */
+  session_id: string;
+}
