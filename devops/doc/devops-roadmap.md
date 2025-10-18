@@ -12,7 +12,7 @@
 | Код | Описание | Статус | План |
 |-----|----------|--------|------|
 | D0 | Basic Docker Setup | ✅ Completed | [план](plans/d0-docker-setup-plan.md) |
-| D1 | Build & Publish | 📋 Planned | - |
+| D1 | Build & Publish | 🚧 In Progress | [план](plans/d1-build-publish-plan.md) |
 | D2 | Развертывание на сервер | 📋 Planned | - |
 | D3 | Auto Deploy | 📋 Planned | - |
 
@@ -77,22 +77,49 @@
 
 ## Спринт D1: Build & Publish
 
+**Дата начала**: 18 октября 2025
+**Статус**: 🚧 В работе
+
 ### Цели
 
 Автоматическая сборка и публикация Docker образов в GitHub Container Registry.
 
 ### Состав работ
 
-- Создать GitHub Actions workflow `.github/workflows/build.yml`
-- Настроить trigger: push в main ветку
-- Собрать 3 образа (bot, api, frontend)
-- Опубликовать образы в ghcr.io с тегом `latest`
-- Создать краткую инструкцию по использованию GitHub Actions для сборки и публикации образов
+**Реализовано**:
+- ✅ Создан GitHub Actions workflow `.github/workflows/build.yml`
+- ✅ Настроен trigger: push в main + pull_request
+- ✅ Matrix strategy для параллельной сборки 3 образов (bot, api, frontend)
+- ✅ Кэширование Docker layers для ускорения
+- ✅ Тегирование: latest и sha-XXXXXX
+- ✅ Создан `docker-compose.registry.yml` для использования образов из ghcr.io
+- ✅ Обновлен Makefile с командами для registry
+- ✅ Создана документация: github-actions-intro.md, github-registry-setup.md
+- ✅ Создан DOCKER_QUICKSTART.md
+- ✅ Обновлен README.md с badge и инструкциями
+
+**В процессе**:
+- ⏳ Тестирование workflow в реальных условиях
+- ⏳ Публикация образов и настройка public access
+
+### Технические решения
+
+- **CI/CD**: GitHub Actions с matrix strategy
+- **Registry**: GitHub Container Registry (ghcr.io)
+- **Visibility**: Public образы (доступны без авторизации)
+- **Кэширование**: GitHub Actions Cache для Docker layers
+- **Теги**: latest (auto-update), sha (immutable)
+- **Два режима**: локальная сборка (dev) и registry (prod)
 
 **Ожидаемые файлы:**
-- `.github/workflows/build.yml`
-- `devops/doc/guides/github-registry-setup.md` (инструкция по настройке permissions)
-- Обновленный `README.md` с badges статуса сборки
+- `.github/workflows/build.yml` ✅
+- `docker-compose.registry.yml` ✅
+- `devops/doc/guides/github-actions-intro.md` ✅
+- `devops/doc/guides/github-registry-setup.md` ✅
+- `devops/doc/plans/d1-build-publish-plan.md` ✅
+- `DOCKER_QUICKSTART.md` ✅
+- Обновленный `README.md` с badges ✅
+- Обновленный `Makefile` ✅
 
 ---
 

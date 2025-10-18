@@ -1,128 +1,265 @@
-# Docker Quick Start
+# Docker Quickstart
 
-Быстрая инструкция по запуску проекта через Docker.
+## Два способа запуска
 
-## Предварительные требования
+Проект поддерживает два способа работы с Docker:
 
-- Docker и Docker Compose установлены
-- Токен Telegram бота (от @BotFather)
-- API ключ от Openrouter
+1. **Локальная сборка** - собирает образы из исходников на вашей машине
+2. **Registry образы** - использует готовые образы из GitHub Container Registry
 
-## Шаги запуска
+## Локальная сборка
 
-### 1. Создать конфигурацию
+### Когда использовать
+
+- Разработка и отладка кода
+- Тестирование изменений в Dockerfile
+- Нет доступа к интернету или ghcr.io
+- Первый запуск проекта
+
+### Команды
 
 ```bash
+# Создать .env файл
 cp .env.example .env
-```
+# Отредактировать .env и добавить TELEGRAM_BOT_TOKEN, OPENAI_API_KEY
 
-Отредактировать `.env` и заполнить:
-- `TELEGRAM_BOT_TOKEN` - ваш токен от @BotFather
-- `OPENAI_API_KEY` - ваш ключ от Openrouter
-
-### 2. Запустить сервисы
-
-```bash
-make docker-build
+# Собрать и запустить все сервисы
 make docker-up
-```
 
-Или напрямую:
-```bash
-docker-compose build
+# Или вручную
 docker-compose up -d
-```
 
-### 3. Применить миграции БД (при первом запуске)
-
-```bash
-docker-compose exec api uv run alembic upgrade head
-```
-
-### 4. Проверить статус
-
-```bash
-make docker-status
-```
-
-Все 3 сервиса должны быть в состоянии "Up":
-- telegram-bot
-- telegram-api
-- telegram-frontend
-
-### 5. Проверить логи
-
-```bash
-make docker-logs
-```
-
-Или для конкретного сервиса:
-```bash
-docker-compose logs -f bot
-docker-compose logs -f api
-docker-compose logs -f frontend
-```
-
-### 6. Открыть сервисы
-
-- **Frontend**: http://localhost:3000
-- **API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Telegram Bot**: отправьте `/start` боту в Telegram
-
-## Полезные команды
-
-```bash
-# Остановить все сервисы
-make docker-down
-
-# Пересобрать образы
+# Пересобрать образы после изменений
 make docker-build
 
-# Посмотреть логи
+# Просмотр логов
 make docker-logs
 
 # Статус сервисов
 make docker-status
 
-# Полная очистка (удалить volumes и images)
-make docker-clean
-```
-
-## Решение проблем
-
-### Сервис не запускается
-
-Проверьте логи:
-```bash
-docker-compose logs <service-name>
-```
-
-### Ошибка подключения к БД
-
-Убедитесь, что файл `telegram_bot.db` существует и доступен для записи.
-
-### Порт уже занят
-
-Если порты 3000 или 8000 заняты другими приложениями, измените их в `docker-compose.yml`:
-```yaml
-ports:
-  - "3001:3000"  # для frontend
-  - "8001:8000"  # для api
-```
-
-## Остановка
-
-```bash
+# Остановить сервисы
 make docker-down
-```
 
-Это остановит все контейнеры, но сохранит данные БД и логи.
-
-## Полная очистка
-
-```bash
+# Остановить и удалить volumes
 make docker-clean
 ```
 
-**Внимание**: это удалит все данные, включая БД и логи!
+### Применение миграций
+
+```bash
+docker-compose exec api uv run alembic upgrade head
+```
+
+### Особенности
+
+- **Сборка**: ~90-120 секунд при первом запуске
+- **Файлы**: Использует `docker-compose.yml`
+- **Изменения**: При изменении кода нужно пересобирать образ
+
+## Registry образы (GitHub Container Registry)
+
+### Когда использовать
+
+- Production развертывание
+- Тестирование стабильной версии
+- Быстрый запуск без сборки
+- CI/CD pipeline
+- Развертывание на сервере
+
+### Команды
+
+```bash
+# Создать .env файл (если еще нет)
+cp .env.example .env
+# Отредактировать .env и добавить TELEGRAM_BOT_TOKEN, OPENAI_API_KEY
+
+# Pull последних образов из registry
+make docker-pull
+
+# Запустить сервисы с образами из registry
+make docker-up-registry
+
+# Или вручную
+docker-compose -f docker-compose.registry.yml up -d
+
+# Просмотр логов
+make docker-logs-registry
+
+# Статус сервисов
+make docker-status-registry
+
+# Остановить сервисы
+make docker-down-registry
+```
+
+### Доступные образы
+
+Образы публикуются автоматически при push в `main` ветку:
+
+```
+ghcr.io/natapage/telegram-bot-bot:latest
+ghcr.io/natapage/telegram-bot-api:latest
+ghcr.io/natapage/telegram-bot-frontend:latest
+```
+
+### Особенности
+
+- **Сборка**: Не требуется, образы уже собраны
+- **Скорость**: ~10-30 секунд для pull и запуска
+- **Файлы**: Использует `docker-compose.registry.yml`
+- **Обновления**: `make docker-pull` для получения свежих образов
+
+### Применение миграций
+
+```bash
+docker-compose -f docker-compose.registry.yml exec api uv run alembic upgrade head
+```
+
+## Доступ к сервисам
+
+После запуска (любым способом):
+
+- **Frontend**: http://localhost:3001
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+## Сравнение
+
+| Аспект | Локальная сборка | Registry образы |
+|--------|------------------|-----------------|
+| Скорость первого запуска | ~90-120 сек | ~10-30 сек |
+| Требует сборки | Да | Нет |
+| Подходит для разработки | ✅ Да | ❌ Нет |
+| Подходит для production | ❌ Нет | ✅ Да |
+| Требует интернет | Нет (после первой сборки) | Да (для pull) |
+| Размер на диске | Больше (исходники + образы) | Меньше (только образы) |
+| Обновления | `make docker-build` | `make docker-pull` |
+| Изменения кода | Сразу видны после rebuild | Не видны (фиксированная версия) |
+
+## Выбор образов для production
+
+### Latest tag (рекомендуется для staging)
+
+```yaml
+image: ghcr.io/natapage/telegram-bot-api:latest
+```
+
+- Всегда последняя версия из `main`
+- Автоматические обновления
+- Может содержать незамеченные баги
+
+### SHA tag (рекомендуется для production)
+
+```yaml
+image: ghcr.io/natapage/telegram-bot-api:sha-abc123f
+```
+
+- Фиксированная версия
+- Воспроизводимость
+- Стабильность
+
+## Troubleshooting
+
+### Ошибка: Cannot pull image
+
+**Проблема**: Образы не могут быть загружены из registry
+
+**Решение**:
+1. Проверить интернет соединение
+2. Убедиться что образы опубликованы: https://github.com/natapage?tab=packages
+3. Проверить что образы публичные (public access)
+
+### Ошибка: Port already in use
+
+**Проблема**: Порты 3001 или 8000 уже заняты
+
+**Решение**:
+```bash
+# Остановить локальную сборку если запущена
+make docker-down
+
+# Или остановить registry версию
+make docker-down-registry
+
+# Или изменить порты в docker-compose файле
+```
+
+### Образы устарели
+
+**Проблема**: Запускается старая версия после обновления кода
+
+**Решение**:
+
+Для локальной сборки:
+```bash
+make docker-build
+make docker-up
+```
+
+Для registry образов:
+```bash
+make docker-down-registry
+make docker-pull
+make docker-up-registry
+```
+
+## Best Practices
+
+### Разработка
+
+1. Используйте **локальную сборку** для активной разработки
+2. Пересобирайте образы после изменений: `make docker-build`
+3. Проверяйте логи: `make docker-logs`
+
+### Тестирование
+
+1. Используйте **registry образы** для тестирования интеграций
+2. Pull свежих образов перед тестами: `make docker-pull`
+3. Используйте фиксированные SHA теги для воспроизводимости
+
+### Production
+
+1. Используйте **registry образы** с SHA тегами
+2. Не используйте `latest` для production
+3. Тестируйте образы на staging перед production
+4. Документируйте какой SHA используется в production
+
+## Дополнительные команды
+
+### Просмотр образов на машине
+
+```bash
+docker images | grep telegram-bot
+```
+
+### Удаление старых образов
+
+```bash
+docker image prune -a
+```
+
+### Проверка размера образов
+
+```bash
+docker images ghcr.io/natapage/telegram-bot-*
+```
+
+### Логи конкретного сервиса
+
+```bash
+# Локальная сборка
+docker-compose logs -f bot
+docker-compose logs -f api
+docker-compose logs -f frontend
+
+# Registry образы
+docker-compose -f docker-compose.registry.yml logs -f bot
+```
+
+## Ресурсы
+
+- **GitHub Actions**: `.github/workflows/build.yml`
+- **Образы**: https://github.com/natapage?tab=packages
+- **Документация**: `devops/doc/guides/github-actions-intro.md`
+- **Настройка registry**: `devops/doc/guides/github-registry-setup.md`

@@ -1,13 +1,11 @@
-# Docker Compose конфигурация для локальной сборки образов
-# Собирает образы из Dockerfile на каждом запуске
-# Для использования готовых образов из GitHub Container Registry используйте docker-compose.registry.yml
+# Docker Compose конфигурация для использования образов из GitHub Container Registry
+# Использует pre-built образы вместо локальной сборки
+# Для локальной сборки используйте docker-compose.yml
 
 services:
   # Telegram Bot
   bot:
-    build:
-      context: .
-      dockerfile: Dockerfile.bot
+    image: ghcr.io/natapage/telegram-bot-bot:latest
     container_name: telegram-bot
     env_file:
       - .env
@@ -21,9 +19,7 @@ services:
 
   # FastAPI Backend
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+    image: ghcr.io/natapage/telegram-bot-api:latest
     container_name: telegram-api
     ports:
       - "8000:8000"
@@ -37,9 +33,7 @@ services:
 
   # Next.js Frontend
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../Dockerfile.frontend
+    image: ghcr.io/natapage/telegram-bot-frontend:latest
     container_name: telegram-frontend
     ports:
       - "3001:3000"

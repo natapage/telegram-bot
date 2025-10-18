@@ -1,5 +1,7 @@
 # LLM-ассистент Telegram-бот
 
+![Build Status](https://github.com/natapage/telegram-bot/actions/workflows/build.yml/badge.svg)
+
 LLM-ассистент, реализованный в виде Telegram-бота для взаимодействия с пользователями.
 
 ## Описание
@@ -44,7 +46,9 @@ make run
 
 ### Запуск через Docker
 
-#### Быстрый старт
+> 💡 **Быстрый старт**: См. [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) для детальной инструкции по выбору между локальной сборкой и registry образами.
+
+#### Вариант 1: Локальная сборка (для разработки)
 
 1. Создать `.env` файл на основе `.env.example`:
 ```bash
@@ -67,6 +71,7 @@ make docker-up
 
 #### Docker команды
 
+**Локальная сборка**:
 ```bash
 make docker-up       # Запустить все сервисы в фоне
 make docker-down     # Остановить все сервисы
@@ -76,18 +81,67 @@ make docker-status   # Статус сервисов
 make docker-clean    # Остановить и удалить volumes + очистка
 ```
 
+**Registry образы**:
+```bash
+make docker-pull           # Pull образов из GitHub Container Registry
+make docker-up-registry    # Запустить с образами из registry
+make docker-down-registry  # Остановить сервисы
+make docker-logs-registry  # Просмотр логов
+make docker-status-registry # Статус сервисов
+```
+
 #### Доступ к сервисам
 
 - **Frontend**: http://localhost:3001 (или 3000, если порт свободен)
 - **API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
+#### Вариант 2: Использование образов из GitHub Container Registry (для production)
+
+Образы автоматически публикуются в GitHub Container Registry при каждом push в `main`.
+
+**Преимущества**:
+- ⚡ Быстрый запуск без сборки (~10-30 секунд)
+- 🔒 Стабильные протестированные версии
+- 🚀 Готовность к production
+
+**Команды**:
+
+```bash
+# 1. Создать .env файл
+cp .env.example .env
+
+# 2. Заполнить переменные окружения в .env
+
+# 3. Pull образов из registry
+make docker-pull
+
+# 4. Запустить сервисы
+make docker-up-registry
+```
+
+**Или вручную**:
+
+```bash
+docker-compose -f docker-compose.registry.yml pull
+docker-compose -f docker-compose.registry.yml up -d
+```
+
+**Доступные образы**:
+- `ghcr.io/natapage/telegram-bot-bot:latest`
+- `ghcr.io/natapage/telegram-bot-api:latest`
+- `ghcr.io/natapage/telegram-bot-frontend:latest`
+
 #### Применение миграций
 
 После первого запуска нужно применить миграции:
 
 ```bash
+# Для локальной сборки
 docker-compose exec api uv run alembic upgrade head
+
+# Для registry образов
+docker-compose -f docker-compose.registry.yml exec api uv run alembic upgrade head
 ```
 
 ## Команды бота

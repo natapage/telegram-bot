@@ -62,7 +62,7 @@ frontend-lint:
 frontend-test:
 	cd frontend && pnpm test
 
-# Docker commands
+# Docker commands (локальная сборка)
 .PHONY: docker-up docker-down docker-build docker-logs docker-status docker-clean
 
 docker-up:
@@ -83,3 +83,21 @@ docker-status:
 docker-clean:
 	docker-compose down -v
 	docker system prune -f
+
+# Docker commands (использование образов из GitHub Container Registry)
+.PHONY: docker-pull docker-up-registry docker-down-registry docker-logs-registry docker-status-registry
+
+docker-pull:
+	docker-compose -f docker-compose.registry.yml pull
+
+docker-up-registry:
+	docker-compose -f docker-compose.registry.yml up -d
+
+docker-down-registry:
+	docker-compose -f docker-compose.registry.yml down
+
+docker-logs-registry:
+	docker-compose -f docker-compose.registry.yml logs -f
+
+docker-status-registry:
+	docker-compose -f docker-compose.registry.yml ps
