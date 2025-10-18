@@ -1,50 +1,187 @@
-# Docker Compose конфигурация для локальной сборки образов
-# Собирает образы из Dockerfile на каждом запуске
-# Для использования готовых образов из GitHub Container Registry используйте docker-compose.registry.yml
+# Docker Compose конфигурация для production-ready системы
+# Использует готовые образы из GitHub Container Registry
+# Для локальной разработки используйте docker-compose.dev.yml
+
+version: '3.9'
 
 services:
-  # Telegram Bot
+  # Telegram Bot Service
   bot:
-    build:
-      context: .
-      dockerfile: Dockerfile.bot
+    image: ghcr.io/natapage/bot:latest
     container_name: telegram-bot
-    env_file:
-      - .env
-    volumes:
-      - ./prompts:/app/prompts:ro
-      - ./telegram_bot.db:/app/telegram_bot.db
-      - ./logs:/app/logs
     restart: unless-stopped
+
+    # Зависимости
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
-  # FastAPI Backend
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: telegram-api
-    ports:
-      - "8000:8000"
+    # Переменные окружения
     env_file:
       - .env
-    volumes:
-      - ./prompts:/app/prompts:ro
-      - ./telegram_bot.db:/app/telegram_bot.db
-      - ./logs:/app/logs
-    restart: unless-stopped
-
-  # Next.js Frontend
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../Dockerfile.frontend
-    container_name: telegram-frontend
-    ports:
-      - "3001:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=sqlite+aiosqlite:///./data/telegram_bot.db
+
+    # Монтирование volumes
+    volumes:
+      - ./prompts:/app/prompts:ro
+      - bot-data:/app/data
+      - bot-logs:/app/logs
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=bot"
+
+    # Healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import asyncio; import sys; sys.exit(0)'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - telegram-network
+
+  # FastAPI Backend Service
+  api:
+    image: ghcr.io/natapage/api:latest
+    container_name: telegram-api
     restart: unless-stopped
+
+    # Порты
+    ports:
+      - "${API_PORT:-8004}:8000"
+
+    # Переменные окружения
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=sqlite+aiosqlite:///./data/telegram_bot.db
+
+    # Монтирование volumes
+    volumes:
+      - ./prompts:/app/prompts:ro
+      - api-data:/app/data
+      - api-logs:/app/logs
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=api"
+
+    # Healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - telegram-network
+
+  # Next.js Frontend Service
+  frontend:
+    image: ghcr.io/natapage/frontend:latest
+    container_name: telegram-frontend
+    restart: unless-stopped
+
+    # Зависимости
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+
+    # Порты
+    ports:
+      - "${FRONTEND_PORT:-3004}:3000"
+
+    # Переменные окружения
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://89.223.67.136:8004}
+      - NODE_ENV=production
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=frontend"
+
+    # Healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - telegram-network
+
+# Named volumes для персистентности данных
+volumes:
+  bot-data:
+    name: telegram-bot-data
+    driver: local
+
+  bot-logs:
+    name: telegram-bot-logs
+    driver: local
+
+  api-data:
+    name: telegram-api-data
+    driver: local
+
+  api-logs:
+    name: telegram-api-logs
+    driver: local
+
+# Dedicated network для изоляции
+networks:
+  telegram-network:
+    name: telegram-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

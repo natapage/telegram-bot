@@ -1,44 +1,70 @@
-# Docker Compose конфигурация для использования образов из GitHub Container Registry
-# Использует pre-built образы вместо локальной сборки
-# Для локальной сборки используйте docker-compose.yml
+# Docker Compose конфигурация для использования готовых образов из GitHub Container Registry
+# Этот файл является упрощенной версией для быстрого старта
+# Для production используйте docker-compose.yml + docker-compose.prod.yml
+
+version: '3.9'
 
 services:
-  # Telegram Bot
+  # Telegram Bot Service
   bot:
-    image: ghcr.io/natapage/telegram-bot-bot:latest
+    image: ghcr.io/natapage/bot:latest
     container_name: telegram-bot
+    restart: unless-stopped
     env_file:
       - .env
     volumes:
       - ./prompts:/app/prompts:ro
-      - ./telegram_bot.db:/app/telegram_bot.db
+      - ./telegram_bot.db:/app/data/telegram_bot.db
       - ./logs:/app/logs
-    restart: unless-stopped
     depends_on:
       - api
+    networks:
+      - telegram-network
 
-  # FastAPI Backend
+  # FastAPI Backend Service
   api:
-    image: ghcr.io/natapage/telegram-bot-api:latest
+    image: ghcr.io/natapage/api:latest
     container_name: telegram-api
+    restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8004:8000"
     env_file:
       - .env
     volumes:
       - ./prompts:/app/prompts:ro
-      - ./telegram_bot.db:/app/telegram_bot.db
+      - ./telegram_bot.db:/app/data/telegram_bot.db
       - ./logs:/app/logs
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - telegram-network
 
-  # Next.js Frontend
+  # Next.js Frontend Service
   frontend:
-    image: ghcr.io/natapage/telegram-bot-frontend:latest
+    image: ghcr.io/natapage/frontend:latest
     container_name: telegram-frontend
-    ports:
-      - "3001:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
     restart: unless-stopped
+    ports:
+      - "3004:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://89.223.67.136:8004
+      - NODE_ENV=production
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - telegram-network
+
+networks:
+  telegram-network:
+    name: telegram-network
+    driver: bridge

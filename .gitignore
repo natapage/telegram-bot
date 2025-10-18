@@ -12,6 +12,8 @@ ENV/
 
 # Environment variables
 .env
+.env.local
+.env.*.local
 
 # Logs
 logs/
@@ -23,6 +25,19 @@ logs/
 *.db-wal
 *.db-shm
 
+# Secrets
+secrets/*.txt
+secrets/*.key
+!secrets/.gitkeep
+!secrets/README.md
+
+# Backups
+backups/
+*.bak
+
+# Docker
+docker-compose.override.yml
+
 # IDE
 .vscode/
 .idea/
@@ -32,3 +47,8 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp

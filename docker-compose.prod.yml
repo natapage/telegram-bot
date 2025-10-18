@@ -1,0 +1,155 @@
+# Production overrides для docker-compose.yml
+# Использование: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.9'
+
+services:
+  bot:
+    # Production image tag
+    image: ghcr.io/natapage/bot:${BOT_VERSION:-latest}
+    
+    # Более строгие resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 768M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        labels: "service=bot,environment=production"
+    
+    # Secrets
+    secrets:
+      - telegram_bot_token
+      - openai_api_key
+    
+    # Production healthcheck
+    healthcheck:
+      interval: 1m
+      timeout: 15s
+      retries: 5
+      start_period: 1m
+
+  api:
+    # Production image tag
+    image: ghcr.io/natapage/api:${API_VERSION:-latest}
+    
+    # Более строгие resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        labels: "service=api,environment=production"
+    
+    # Secrets
+    secrets:
+      - openai_api_key
+    
+    # Production healthcheck
+    healthcheck:
+      interval: 1m
+      timeout: 15s
+      retries: 5
+      start_period: 1m
+    
+    # Environment overrides
+    environment:
+      - LOG_LEVEL=WARNING
+
+  frontend:
+    # Production image tag
+    image: ghcr.io/natapage/frontend:${FRONTEND_VERSION:-latest}
+    
+    # Более строгие resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        labels: "service=frontend,environment=production"
+    
+    # Production healthcheck
+    healthcheck:
+      interval: 1m
+      timeout: 15s
+      retries: 5
+      start_period: 1m
+    
+    # Environment overrides
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+
+# Secrets configuration
+secrets:
+  telegram_bot_token:
+    file: ./secrets/telegram_bot_token.txt
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt
+
+# Production volumes with backup labels
+volumes:
+  bot-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/telegram-bot/data
+    labels:
+      backup: "true"
+      retention: "30d"
+  
+  api-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/telegram-api/data
+    labels:
+      backup: "true"
+      retention: "30d"
+

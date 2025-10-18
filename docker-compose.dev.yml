@@ -1,0 +1,144 @@
+# Development overrides для локальной разработки
+# Использование: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.9'
+
+services:
+  bot:
+    # Локальная сборка вместо registry image
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+      args:
+        - BUILD_DATE=${BUILD_DATE:-}
+        - VCS_REF=${VCS_REF:-}
+    image: telegram-bot:dev
+    
+    # Development volumes - hot reload
+    volumes:
+      - ./src:/app/src:ro
+      - ./prompts:/app/prompts:ro
+      - ./telegram_bot.db:/app/data/telegram_bot.db
+      - ./logs:/app/logs
+    
+    # Development environment
+    environment:
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
+      - WATCHFILES_FORCE_POLLING=true
+    
+    # Менее строгие resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+    
+    # Development healthcheck - более частый
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+
+  api:
+    # Локальная сборка вместо registry image
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        - BUILD_DATE=${BUILD_DATE:-}
+        - VCS_REF=${VCS_REF:-}
+    image: telegram-api:dev
+    
+    # Development volumes - hot reload
+    volumes:
+      - ./src:/app/src:ro
+      - ./prompts:/app/prompts:ro
+      - ./telegram_bot.db:/app/data/telegram_bot.db
+      - ./logs:/app/logs
+    
+    # Development ports - expose для отладки
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # debugpy port
+    
+    # Development environment
+    environment:
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
+      - RELOAD=true
+    
+    # Менее строгие resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    
+    # Development healthcheck - более частый
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+    
+    # Development command с hot reload
+    command: uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    # Локальная сборка вместо registry image
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
+      target: development
+      args:
+        - BUILD_DATE=${BUILD_DATE:-}
+        - VCS_REF=${VCS_REF:-}
+    image: telegram-frontend:dev
+    
+    # Development volumes - hot reload
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/node_modules:/app/node_modules
+    
+    # Development ports
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node debugger port
+    
+    # Development environment
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - WATCHPACK_POLLING=true
+    
+    # Менее строгие resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    
+    # Development healthcheck - более частый
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+    
+    # Development command
+    command: npm run dev
+
+# Development volumes - локальные пути
+volumes:
+  bot-data:
+    driver: local
+  bot-logs:
+    driver: local
+  api-data:
+    driver: local
+  api-logs:
+    driver: local
+
