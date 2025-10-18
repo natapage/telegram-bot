@@ -7,7 +7,7 @@ services:
   bot:
     # Production image tag
     image: ghcr.io/natapage/bot:${BOT_VERSION:-latest}
-    
+
     # Более строгие resource limits
     deploy:
       resources:
@@ -22,7 +22,7 @@ services:
         delay: 5s
         max_attempts: 3
         window: 120s
-    
+
     # Production logging
     logging:
       driver: "json-file"
@@ -30,12 +30,12 @@ services:
         max-size: "50m"
         max-file: "10"
         labels: "service=bot,environment=production"
-    
+
     # Secrets
     secrets:
       - telegram_bot_token
       - openai_api_key
-    
+
     # Production healthcheck
     healthcheck:
       interval: 1m
@@ -46,7 +46,7 @@ services:
   api:
     # Production image tag
     image: ghcr.io/natapage/api:${API_VERSION:-latest}
-    
+
     # Более строгие resource limits
     deploy:
       resources:
@@ -61,7 +61,7 @@ services:
         delay: 5s
         max_attempts: 3
         window: 120s
-    
+
     # Production logging
     logging:
       driver: "json-file"
@@ -69,18 +69,18 @@ services:
         max-size: "50m"
         max-file: "10"
         labels: "service=api,environment=production"
-    
+
     # Secrets
     secrets:
       - openai_api_key
-    
+
     # Production healthcheck
     healthcheck:
       interval: 1m
       timeout: 15s
       retries: 5
       start_period: 1m
-    
+
     # Environment overrides
     environment:
       - LOG_LEVEL=WARNING
@@ -88,7 +88,7 @@ services:
   frontend:
     # Production image tag
     image: ghcr.io/natapage/frontend:${FRONTEND_VERSION:-latest}
-    
+
     # Более строгие resource limits
     deploy:
       resources:
@@ -103,7 +103,7 @@ services:
         delay: 5s
         max_attempts: 3
         window: 120s
-    
+
     # Production logging
     logging:
       driver: "json-file"
@@ -111,14 +111,14 @@ services:
         max-size: "50m"
         max-file: "10"
         labels: "service=frontend,environment=production"
-    
+
     # Production healthcheck
     healthcheck:
       interval: 1m
       timeout: 15s
       retries: 5
       start_period: 1m
-    
+
     # Environment overrides
     environment:
       - NODE_ENV=production
@@ -142,7 +142,7 @@ volumes:
     labels:
       backup: "true"
       retention: "30d"
-  
+
   api-data:
     driver: local
     driver_opts:
@@ -152,4 +152,3 @@ volumes:
     labels:
       backup: "true"
       retention: "30d"
-
